@@ -1,9 +1,19 @@
-module Selectize exposing (init, update, view, selectizeItem, Model, Msg, Item)
+module Selectize
+    exposing
+        ( init
+        , update
+        , view
+        , selectizeItem
+        , Model
+        , Msg
+        , Item
+        , keyDown
+        , keyUp
+        )
 
 import Html exposing (..)
 import Html.Attributes exposing (value, defaultValue)
 import Html.Events exposing (onInput)
-import Html.Keyed
 import Fuzzy
 import String
 
@@ -46,6 +56,7 @@ type alias Model x =
     , boxPosition : Int
     , boxShow : Bool
     , status : Status
+    , inputText : String
     }
 
 
@@ -58,7 +69,7 @@ init initialItems availableItems =
     , boxPosition = 0
     , boxShow = False
     , status = Initial
-    , generation = 0
+    , inputText = ""
     }
         ! []
 
@@ -69,6 +80,8 @@ init initialItems availableItems =
 
 type Msg
     = Input String
+    | KeyDown Int
+    | KeyUp Int
 
 
 clean : String -> String
@@ -108,7 +121,7 @@ diffItems a b =
 updateInput : String -> Model x -> ( Model x, Cmd Msg )
 updateInput string model =
     if (String.length string < 2) then
-        { model | status = Editing, boxItems = [] } ! []
+        { model | status = Editing, boxItems = [], inputText = string } ! []
     else
         let
             unselectedItems =
@@ -121,7 +134,7 @@ updateInput string model =
                     |> List.filter (((>) 1100) << fst)
                     |> List.map snd
         in
-            { model | status = Editing, boxItems = boxItems } ! []
+            { model | status = Editing, inputText = string, boxItems = boxItems } ! []
 
 
 updateKey : Int -> Model x -> ( Model x, Cmd Msg )
@@ -154,8 +167,8 @@ updateKey keyCode model =
                     Just item ->
                         { model
                             | status = Idle
-                            , generation = model.generation + 1
                             , selectedItems = model.selectedItems ++ [ item ]
+                            , inputText = ""
                         }
                             ! []
 
@@ -163,29 +176,20 @@ updateKey keyCode model =
             model ! []
 
 
-update : Maybe Int -> Maybe Msg -> Model x -> ( Model x, Cmd Msg )
-update maybeKeyCode maybeMsg model =
-    let
-        ( model1, cmd1 ) =
-            case maybeMsg of
-                Nothing ->
-                    model ! []
+update : Msg -> Model x -> ( Model x, Cmd Msg )
+update msg model =
+    case msg of
+        Input string ->
+            updateInput string model
 
-                Just msg ->
-                    case msg of
-                        Input string ->
-                            updateInput string model
-    in
-        case maybeKeyCode of
-            Nothing ->
-                ( model1, cmd1 )
+        KeyDown code ->
+            updateKey code model
 
-            Just keyCode ->
-                let
-                    ( model2, cmd2 ) =
-                        updateKey keyCode model1
-                in
-                    model2 ! [ cmd1, cmd2 ]
+        KeyUp code ->
+            if model.status == Idle && code == 13 then
+                { model | status = Editing } ! []
+            else
+                model ! []
 
 
 
@@ -218,17 +222,30 @@ view : Model x -> Html Msg
 view model =
     let
         editInput =
-            input [ onInput Input ] []
+            case model.status of
+                Initial ->
+                    input [ onInput Input ] []
+
+                Editing ->
+                    input [ onInput Input ] []
+
+                Idle ->
+                    input [ value "", onInput Input ] []
     in
         div []
             [ div []
                 [ div [] [ itemsView (Debug.log "DEBUG1" model.selectedItems) ]
-                , Html.Keyed.node "div"
-                    []
-                    [ ( "gen-" ++ (toString model.generation)
-                      , editInput
-                      )
-                    ]
+                , editInput
                 ]
             , boxView model.boxPosition model.boxItems
             ]
+
+
+keyUp : Int -> Msg
+keyUp code =
+    KeyUp code
+
+
+keyDown : Int -> Msg
+keyDown code =
+    KeyDown code

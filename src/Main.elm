@@ -47,7 +47,8 @@ type Msg
     = Added String
     | Removed String
     | SelectizeMsg Selectize.Msg
-    | KeyPress Int
+    | KeyDown Int
+    | KeyUp Int
 
 
 update : Msg -> Model -> ( Model, Cmd Msg )
@@ -56,14 +57,21 @@ update msg model =
         SelectizeMsg selectizeMsg ->
             let
                 ( selectizeModel, selectizeCmd ) =
-                    Selectize.update Nothing (Just selectizeMsg) model.selectize
+                    Selectize.update selectizeMsg model.selectize
             in
                 { model | selectize = selectizeModel } ! [ Cmd.map SelectizeMsg selectizeCmd ]
 
-        KeyPress keyCode ->
+        KeyDown keyCode ->
             let
                 ( selectizeModel, selectizeCmd ) =
-                    Selectize.update (Just keyCode) Nothing model.selectize
+                    Selectize.update (Selectize.keyDown keyCode) model.selectize
+            in
+                { model | selectize = selectizeModel } ! [ Cmd.map SelectizeMsg selectizeCmd ]
+
+        KeyUp keyCode ->
+            let
+                ( selectizeModel, selectizeCmd ) =
+                    Selectize.update (Selectize.keyUp keyCode) model.selectize
             in
                 { model | selectize = selectizeModel } ! [ Cmd.map SelectizeMsg selectizeCmd ]
 
@@ -87,7 +95,7 @@ view model =
 
 subscriptions : Model -> Sub Msg
 subscriptions model =
-    Keyboard.downs KeyPress
+    Sub.batch [ Keyboard.downs KeyDown, Keyboard.ups KeyUp ]
 
 
 currencies : List (Selectize.Item CurrencyRec)

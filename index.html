@@ -7857,18 +7857,40 @@ var _tripokey$elm_fuzzy$Fuzzy$AddPenalty = function (a) {
 var _tripokey$elm_fuzzy$Fuzzy$addPenalty = function (penalty) {
 	return _tripokey$elm_fuzzy$Fuzzy$AddPenalty(penalty);
 };
-var _user$project$Selectize$boxView = function (boxItems$) {
-	var _p0 = A2(
+var _user$project$Selectize$boxView = function (boxItems) {
+	var boxItemHtml = function (item) {
+		return A2(
+			_elm_lang$html$Html$div,
+			_elm_lang$core$Native_List.fromArray(
+				[]),
+			_elm_lang$core$Native_List.fromArray(
+				[
+					_elm_lang$html$Html$text(item.display)
+				]));
+	};
+	var filtered = A2(
 		_elm_lang$core$List$map,
-		_elm_lang$core$Debug$log('DEBUG5'),
-		boxItems$);
-	var _p1 = A2(_elm_lang$core$Debug$log, 'DEBUG5', '');
+		_elm_lang$core$Basics$snd,
+		A2(
+			_elm_lang$core$List$filter,
+			function (_p0) {
+				return A2(
+					F2(
+						function (x, y) {
+							return _elm_lang$core$Native_Utils.cmp(x, y) > 0;
+						}),
+					1100,
+					_elm_lang$core$Basics$fst(_p0));
+			},
+			A2(
+				_elm_lang$core$List$take,
+				5,
+				A2(_elm_lang$core$Debug$log, 'DEBUG1', boxItems))));
 	return A2(
 		_elm_lang$html$Html$div,
 		_elm_lang$core$Native_List.fromArray(
 			[]),
-		_elm_lang$core$Native_List.fromArray(
-			[]));
+		A2(_elm_lang$core$List$map, boxItemHtml, filtered));
 };
 var _user$project$Selectize$itemView = function (item) {
 	return A2(
@@ -7926,33 +7948,56 @@ var _user$project$Selectize$score = F2(
 			_elm_lang$core$Native_List.fromArray(
 				[]),
 			_elm_lang$core$Native_List.fromArray(
-				[]),
+				[' ']),
 			cleanNeedle,
 			_user$project$Selectize$clean(hay.display));
 		return {
 			ctor: '_Tuple2',
-			_0: A2(_elm_lang$core$Basics$max, codeScore.score, displayScore.score),
+			_0: A2(_elm_lang$core$Basics$min, codeScore.score, displayScore.score),
 			_1: hay
 		};
 	});
 var _user$project$Selectize$update = F2(
 	function (msg, model) {
-		var _p2 = msg;
-		var unselectedItems = model.availableItems;
-		var boxItems = A2(
-			_elm_lang$core$List$sortBy,
-			_elm_lang$core$Basics$fst,
-			A2(
-				_elm_lang$core$List$map,
-				_user$project$Selectize$score(_p2._0),
-				unselectedItems));
-		return A2(
-			_elm_lang$core$Platform_Cmd_ops['!'],
-			_elm_lang$core$Native_Utils.update(
-				model,
-				{boxItems: boxItems}),
-			_elm_lang$core$Native_List.fromArray(
-				[]));
+		var _p1 = msg;
+		var _p3 = _p1._0;
+		if (_elm_lang$core$Native_Utils.cmp(
+			_elm_lang$core$String$length(_p3),
+			2) < 0) {
+			return A2(
+				_elm_lang$core$Platform_Cmd_ops['!'],
+				_elm_lang$core$Native_Utils.update(
+					model,
+					{
+						boxItems: _elm_lang$core$Native_List.fromArray(
+							[])
+					}),
+				_elm_lang$core$Native_List.fromArray(
+					[]));
+		} else {
+			var unselectedItems = function () {
+				var _p2 = model.selectedItems;
+				if (_p2.ctor === 'Nothing') {
+					return model.availableItems;
+				} else {
+					return A2(_user$project$Selectize$diffItems, model.availableItems, _p2._0);
+				}
+			}();
+			var boxItems = A2(
+				_elm_lang$core$List$sortBy,
+				_elm_lang$core$Basics$fst,
+				A2(
+					_elm_lang$core$List$map,
+					_user$project$Selectize$score(_p3),
+					unselectedItems));
+			return A2(
+				_elm_lang$core$Platform_Cmd_ops['!'],
+				_elm_lang$core$Native_Utils.update(
+					model,
+					{boxItems: boxItems}),
+				_elm_lang$core$Native_List.fromArray(
+					[]));
+		}
 	});
 var _user$project$Selectize$init = F2(
 	function (initialItems, availableItems) {
@@ -7984,7 +8029,6 @@ var _user$project$Selectize$Input = function (a) {
 	return {ctor: 'Input', _0: a};
 };
 var _user$project$Selectize$view = function (model) {
-	var _p3 = A2(_elm_lang$core$Debug$log, 'DEBUG9', model);
 	var selectedItems = A2(
 		_elm_lang$core$Maybe$withDefault,
 		_elm_lang$core$Native_List.fromArray(
@@ -8046,6 +8090,1126 @@ var _user$project$Main$currencies = _elm_lang$core$Native_List.fromArray(
 		display: 'Euro',
 		searchWords: _elm_lang$core$Native_List.fromArray(
 			[])
+	},
+		{
+		itemType: _user$project$Main$Currency('ALL'),
+		code: 'ALL',
+		display: 'Lek',
+		searchWords: _elm_lang$core$Native_List.fromArray(
+			[])
+	},
+		{
+		itemType: _user$project$Main$Currency('DZD'),
+		code: 'DZD',
+		display: 'Algerian Dinar',
+		searchWords: _elm_lang$core$Native_List.fromArray(
+			[])
+	},
+		{
+		itemType: _user$project$Main$Currency('USD'),
+		code: 'USD',
+		display: 'US Dollar',
+		searchWords: _elm_lang$core$Native_List.fromArray(
+			[])
+	},
+		{
+		itemType: _user$project$Main$Currency('AOA'),
+		code: 'AOA',
+		display: 'Kwanza',
+		searchWords: _elm_lang$core$Native_List.fromArray(
+			[])
+	},
+		{
+		itemType: _user$project$Main$Currency('ARS'),
+		code: 'ARS',
+		display: 'Argentine Peso',
+		searchWords: _elm_lang$core$Native_List.fromArray(
+			[])
+	},
+		{
+		itemType: _user$project$Main$Currency('AMD'),
+		code: 'AMD',
+		display: 'Armenian Dram',
+		searchWords: _elm_lang$core$Native_List.fromArray(
+			[])
+	},
+		{
+		itemType: _user$project$Main$Currency('AWG'),
+		code: 'AWG',
+		display: 'Aruban Florin',
+		searchWords: _elm_lang$core$Native_List.fromArray(
+			[])
+	},
+		{
+		itemType: _user$project$Main$Currency('AUD'),
+		code: 'AUD',
+		display: 'Australian Dollar',
+		searchWords: _elm_lang$core$Native_List.fromArray(
+			[])
+	},
+		{
+		itemType: _user$project$Main$Currency('AZN'),
+		code: 'AZN',
+		display: 'Azerbaijanian Manat',
+		searchWords: _elm_lang$core$Native_List.fromArray(
+			[])
+	},
+		{
+		itemType: _user$project$Main$Currency('BSD'),
+		code: 'BSD',
+		display: 'Bahamian Dollar',
+		searchWords: _elm_lang$core$Native_List.fromArray(
+			[])
+	},
+		{
+		itemType: _user$project$Main$Currency('BHD'),
+		code: 'BHD',
+		display: 'Bahraini Dinar',
+		searchWords: _elm_lang$core$Native_List.fromArray(
+			[])
+	},
+		{
+		itemType: _user$project$Main$Currency('BDT'),
+		code: 'BDT',
+		display: 'Taka',
+		searchWords: _elm_lang$core$Native_List.fromArray(
+			[])
+	},
+		{
+		itemType: _user$project$Main$Currency('BBD'),
+		code: 'BBD',
+		display: 'Barbados Dollar',
+		searchWords: _elm_lang$core$Native_List.fromArray(
+			[])
+	},
+		{
+		itemType: _user$project$Main$Currency('BYN'),
+		code: 'BYN',
+		display: 'Belarusian Ruble',
+		searchWords: _elm_lang$core$Native_List.fromArray(
+			[])
+	},
+		{
+		itemType: _user$project$Main$Currency('BYR'),
+		code: 'BYR',
+		display: 'Belarusian Ruble',
+		searchWords: _elm_lang$core$Native_List.fromArray(
+			[])
+	},
+		{
+		itemType: _user$project$Main$Currency('BZD'),
+		code: 'BZD',
+		display: 'Belize Dollar',
+		searchWords: _elm_lang$core$Native_List.fromArray(
+			[])
+	},
+		{
+		itemType: _user$project$Main$Currency('BMD'),
+		code: 'BMD',
+		display: 'Bermudian Dollar',
+		searchWords: _elm_lang$core$Native_List.fromArray(
+			[])
+	},
+		{
+		itemType: _user$project$Main$Currency('INR'),
+		code: 'INR',
+		display: 'Indian Rupee',
+		searchWords: _elm_lang$core$Native_List.fromArray(
+			[])
+	},
+		{
+		itemType: _user$project$Main$Currency('BTN'),
+		code: 'BTN',
+		display: 'Ngultrum',
+		searchWords: _elm_lang$core$Native_List.fromArray(
+			[])
+	},
+		{
+		itemType: _user$project$Main$Currency('BOB'),
+		code: 'BOB',
+		display: 'Boliviano',
+		searchWords: _elm_lang$core$Native_List.fromArray(
+			[])
+	},
+		{
+		itemType: _user$project$Main$Currency('BOV'),
+		code: 'BOV',
+		display: 'Mvdol',
+		searchWords: _elm_lang$core$Native_List.fromArray(
+			[])
+	},
+		{
+		itemType: _user$project$Main$Currency('BAM'),
+		code: 'BAM',
+		display: 'Convertible Mark',
+		searchWords: _elm_lang$core$Native_List.fromArray(
+			[])
+	},
+		{
+		itemType: _user$project$Main$Currency('BWP'),
+		code: 'BWP',
+		display: 'Pula',
+		searchWords: _elm_lang$core$Native_List.fromArray(
+			[])
+	},
+		{
+		itemType: _user$project$Main$Currency('NOK'),
+		code: 'NOK',
+		display: 'Norwegian Krone',
+		searchWords: _elm_lang$core$Native_List.fromArray(
+			[])
+	},
+		{
+		itemType: _user$project$Main$Currency('BRL'),
+		code: 'BRL',
+		display: 'Brazilian Real',
+		searchWords: _elm_lang$core$Native_List.fromArray(
+			[])
+	},
+		{
+		itemType: _user$project$Main$Currency('BND'),
+		code: 'BND',
+		display: 'Brunei Dollar',
+		searchWords: _elm_lang$core$Native_List.fromArray(
+			[])
+	},
+		{
+		itemType: _user$project$Main$Currency('BGN'),
+		code: 'BGN',
+		display: 'Bulgarian Lev',
+		searchWords: _elm_lang$core$Native_List.fromArray(
+			[])
+	},
+		{
+		itemType: _user$project$Main$Currency('BIF'),
+		code: 'BIF',
+		display: 'Burundi Franc',
+		searchWords: _elm_lang$core$Native_List.fromArray(
+			[])
+	},
+		{
+		itemType: _user$project$Main$Currency('CVE'),
+		code: 'CVE',
+		display: 'Cabo Verde Escudo',
+		searchWords: _elm_lang$core$Native_List.fromArray(
+			[])
+	},
+		{
+		itemType: _user$project$Main$Currency('KHR'),
+		code: 'KHR',
+		display: 'Riel',
+		searchWords: _elm_lang$core$Native_List.fromArray(
+			[])
+	},
+		{
+		itemType: _user$project$Main$Currency('CAD'),
+		code: 'CAD',
+		display: 'Canadian Dollar',
+		searchWords: _elm_lang$core$Native_List.fromArray(
+			[])
+	},
+		{
+		itemType: _user$project$Main$Currency('KYD'),
+		code: 'KYD',
+		display: 'Cayman Islands Dollar',
+		searchWords: _elm_lang$core$Native_List.fromArray(
+			[])
+	},
+		{
+		itemType: _user$project$Main$Currency('CLP'),
+		code: 'CLP',
+		display: 'Chilean Peso',
+		searchWords: _elm_lang$core$Native_List.fromArray(
+			[])
+	},
+		{
+		itemType: _user$project$Main$Currency('CLF'),
+		code: 'CLF',
+		display: 'Unidad de Fomento',
+		searchWords: _elm_lang$core$Native_List.fromArray(
+			[])
+	},
+		{
+		itemType: _user$project$Main$Currency('CNY'),
+		code: 'CNY',
+		display: 'Yuan Renminbi',
+		searchWords: _elm_lang$core$Native_List.fromArray(
+			[])
+	},
+		{
+		itemType: _user$project$Main$Currency('COP'),
+		code: 'COP',
+		display: 'Colombian Peso',
+		searchWords: _elm_lang$core$Native_List.fromArray(
+			[])
+	},
+		{
+		itemType: _user$project$Main$Currency('COU'),
+		code: 'COU',
+		display: 'Unidad de Valor Real',
+		searchWords: _elm_lang$core$Native_List.fromArray(
+			[])
+	},
+		{
+		itemType: _user$project$Main$Currency('KMF'),
+		code: 'KMF',
+		display: 'Comoro Franc',
+		searchWords: _elm_lang$core$Native_List.fromArray(
+			[])
+	},
+		{
+		itemType: _user$project$Main$Currency('CDF'),
+		code: 'CDF',
+		display: 'Congolese Franc',
+		searchWords: _elm_lang$core$Native_List.fromArray(
+			[])
+	},
+		{
+		itemType: _user$project$Main$Currency('NZD'),
+		code: 'NZD',
+		display: 'New Zealand Dollar',
+		searchWords: _elm_lang$core$Native_List.fromArray(
+			[])
+	},
+		{
+		itemType: _user$project$Main$Currency('CRC'),
+		code: 'CRC',
+		display: 'Costa Rican Colon',
+		searchWords: _elm_lang$core$Native_List.fromArray(
+			[])
+	},
+		{
+		itemType: _user$project$Main$Currency('HRK'),
+		code: 'HRK',
+		display: 'Kuna',
+		searchWords: _elm_lang$core$Native_List.fromArray(
+			[])
+	},
+		{
+		itemType: _user$project$Main$Currency('CUP'),
+		code: 'CUP',
+		display: 'Cuban Peso',
+		searchWords: _elm_lang$core$Native_List.fromArray(
+			[])
+	},
+		{
+		itemType: _user$project$Main$Currency('CUC'),
+		code: 'CUC',
+		display: 'Peso Convertible',
+		searchWords: _elm_lang$core$Native_List.fromArray(
+			[])
+	},
+		{
+		itemType: _user$project$Main$Currency('ANG'),
+		code: 'ANG',
+		display: 'Netherlands Antillean Guilder',
+		searchWords: _elm_lang$core$Native_List.fromArray(
+			[])
+	},
+		{
+		itemType: _user$project$Main$Currency('CZK'),
+		code: 'CZK',
+		display: 'Czech Koruna',
+		searchWords: _elm_lang$core$Native_List.fromArray(
+			[])
+	},
+		{
+		itemType: _user$project$Main$Currency('DKK'),
+		code: 'DKK',
+		display: 'Danish Krone',
+		searchWords: _elm_lang$core$Native_List.fromArray(
+			[])
+	},
+		{
+		itemType: _user$project$Main$Currency('DJF'),
+		code: 'DJF',
+		display: 'Djibouti Franc',
+		searchWords: _elm_lang$core$Native_List.fromArray(
+			[])
+	},
+		{
+		itemType: _user$project$Main$Currency('DOP'),
+		code: 'DOP',
+		display: 'Dominican Peso',
+		searchWords: _elm_lang$core$Native_List.fromArray(
+			[])
+	},
+		{
+		itemType: _user$project$Main$Currency('EGP'),
+		code: 'EGP',
+		display: 'Egyptian Pound',
+		searchWords: _elm_lang$core$Native_List.fromArray(
+			[])
+	},
+		{
+		itemType: _user$project$Main$Currency('SVC'),
+		code: 'SVC',
+		display: 'El Salvador Colon',
+		searchWords: _elm_lang$core$Native_List.fromArray(
+			[])
+	},
+		{
+		itemType: _user$project$Main$Currency('ERN'),
+		code: 'ERN',
+		display: 'Nakfa',
+		searchWords: _elm_lang$core$Native_List.fromArray(
+			[])
+	},
+		{
+		itemType: _user$project$Main$Currency('ETB'),
+		code: 'ETB',
+		display: 'Ethiopian Birr',
+		searchWords: _elm_lang$core$Native_List.fromArray(
+			[])
+	},
+		{
+		itemType: _user$project$Main$Currency('FKP'),
+		code: 'FKP',
+		display: 'Falkland Islands Pound',
+		searchWords: _elm_lang$core$Native_List.fromArray(
+			[])
+	},
+		{
+		itemType: _user$project$Main$Currency('FJD'),
+		code: 'FJD',
+		display: 'Fiji Dollar',
+		searchWords: _elm_lang$core$Native_List.fromArray(
+			[])
+	},
+		{
+		itemType: _user$project$Main$Currency('GMD'),
+		code: 'GMD',
+		display: 'Dalasi',
+		searchWords: _elm_lang$core$Native_List.fromArray(
+			[])
+	},
+		{
+		itemType: _user$project$Main$Currency('GEL'),
+		code: 'GEL',
+		display: 'Lari',
+		searchWords: _elm_lang$core$Native_List.fromArray(
+			[])
+	},
+		{
+		itemType: _user$project$Main$Currency('GHS'),
+		code: 'GHS',
+		display: 'Ghana Cedi',
+		searchWords: _elm_lang$core$Native_List.fromArray(
+			[])
+	},
+		{
+		itemType: _user$project$Main$Currency('GIP'),
+		code: 'GIP',
+		display: 'Gibraltar Pound',
+		searchWords: _elm_lang$core$Native_List.fromArray(
+			[])
+	},
+		{
+		itemType: _user$project$Main$Currency('GTQ'),
+		code: 'GTQ',
+		display: 'Quetzal',
+		searchWords: _elm_lang$core$Native_List.fromArray(
+			[])
+	},
+		{
+		itemType: _user$project$Main$Currency('GBP'),
+		code: 'GBP',
+		display: 'Pound Sterling',
+		searchWords: _elm_lang$core$Native_List.fromArray(
+			[])
+	},
+		{
+		itemType: _user$project$Main$Currency('GNF'),
+		code: 'GNF',
+		display: 'Guinea Franc',
+		searchWords: _elm_lang$core$Native_List.fromArray(
+			[])
+	},
+		{
+		itemType: _user$project$Main$Currency('GYD'),
+		code: 'GYD',
+		display: 'Guyana Dollar',
+		searchWords: _elm_lang$core$Native_List.fromArray(
+			[])
+	},
+		{
+		itemType: _user$project$Main$Currency('HTG'),
+		code: 'HTG',
+		display: 'Gourde',
+		searchWords: _elm_lang$core$Native_List.fromArray(
+			[])
+	},
+		{
+		itemType: _user$project$Main$Currency('HNL'),
+		code: 'HNL',
+		display: 'Lempira',
+		searchWords: _elm_lang$core$Native_List.fromArray(
+			[])
+	},
+		{
+		itemType: _user$project$Main$Currency('HKD'),
+		code: 'HKD',
+		display: 'Hong Kong Dollar',
+		searchWords: _elm_lang$core$Native_List.fromArray(
+			[])
+	},
+		{
+		itemType: _user$project$Main$Currency('HUF'),
+		code: 'HUF',
+		display: 'Forint',
+		searchWords: _elm_lang$core$Native_List.fromArray(
+			[])
+	},
+		{
+		itemType: _user$project$Main$Currency('ISK'),
+		code: 'ISK',
+		display: 'Iceland Krona',
+		searchWords: _elm_lang$core$Native_List.fromArray(
+			[])
+	},
+		{
+		itemType: _user$project$Main$Currency('IDR'),
+		code: 'IDR',
+		display: 'Rupiah',
+		searchWords: _elm_lang$core$Native_List.fromArray(
+			[])
+	},
+		{
+		itemType: _user$project$Main$Currency('IRR'),
+		code: 'IRR',
+		display: 'Iranian Rial',
+		searchWords: _elm_lang$core$Native_List.fromArray(
+			[])
+	},
+		{
+		itemType: _user$project$Main$Currency('IQD'),
+		code: 'IQD',
+		display: 'Iraqi Dinar',
+		searchWords: _elm_lang$core$Native_List.fromArray(
+			[])
+	},
+		{
+		itemType: _user$project$Main$Currency('ILS'),
+		code: 'ILS',
+		display: 'New Israeli Sheqel',
+		searchWords: _elm_lang$core$Native_List.fromArray(
+			[])
+	},
+		{
+		itemType: _user$project$Main$Currency('JMD'),
+		code: 'JMD',
+		display: 'Jamaican Dollar',
+		searchWords: _elm_lang$core$Native_List.fromArray(
+			[])
+	},
+		{
+		itemType: _user$project$Main$Currency('JPY'),
+		code: 'JPY',
+		display: 'Yen',
+		searchWords: _elm_lang$core$Native_List.fromArray(
+			[])
+	},
+		{
+		itemType: _user$project$Main$Currency('JOD'),
+		code: 'JOD',
+		display: 'Jordanian Dinar',
+		searchWords: _elm_lang$core$Native_List.fromArray(
+			[])
+	},
+		{
+		itemType: _user$project$Main$Currency('KZT'),
+		code: 'KZT',
+		display: 'Tenge',
+		searchWords: _elm_lang$core$Native_List.fromArray(
+			[])
+	},
+		{
+		itemType: _user$project$Main$Currency('KES'),
+		code: 'KES',
+		display: 'Kenyan Shilling',
+		searchWords: _elm_lang$core$Native_List.fromArray(
+			[])
+	},
+		{
+		itemType: _user$project$Main$Currency('KPW'),
+		code: 'KPW',
+		display: 'North Korean Won',
+		searchWords: _elm_lang$core$Native_List.fromArray(
+			[])
+	},
+		{
+		itemType: _user$project$Main$Currency('KRW'),
+		code: 'KRW',
+		display: 'Won',
+		searchWords: _elm_lang$core$Native_List.fromArray(
+			[])
+	},
+		{
+		itemType: _user$project$Main$Currency('KWD'),
+		code: 'KWD',
+		display: 'Kuwaiti Dinar',
+		searchWords: _elm_lang$core$Native_List.fromArray(
+			[])
+	},
+		{
+		itemType: _user$project$Main$Currency('KGS'),
+		code: 'KGS',
+		display: 'Som',
+		searchWords: _elm_lang$core$Native_List.fromArray(
+			[])
+	},
+		{
+		itemType: _user$project$Main$Currency('LAK'),
+		code: 'LAK',
+		display: 'Kip',
+		searchWords: _elm_lang$core$Native_List.fromArray(
+			[])
+	},
+		{
+		itemType: _user$project$Main$Currency('LBP'),
+		code: 'LBP',
+		display: 'Lebanese Pound',
+		searchWords: _elm_lang$core$Native_List.fromArray(
+			[])
+	},
+		{
+		itemType: _user$project$Main$Currency('LSL'),
+		code: 'LSL',
+		display: 'Loti',
+		searchWords: _elm_lang$core$Native_List.fromArray(
+			[])
+	},
+		{
+		itemType: _user$project$Main$Currency('ZAR'),
+		code: 'ZAR',
+		display: 'Rand',
+		searchWords: _elm_lang$core$Native_List.fromArray(
+			[])
+	},
+		{
+		itemType: _user$project$Main$Currency('LRD'),
+		code: 'LRD',
+		display: 'Liberian Dollar',
+		searchWords: _elm_lang$core$Native_List.fromArray(
+			[])
+	},
+		{
+		itemType: _user$project$Main$Currency('LYD'),
+		code: 'LYD',
+		display: 'Libyan Dinar',
+		searchWords: _elm_lang$core$Native_List.fromArray(
+			[])
+	},
+		{
+		itemType: _user$project$Main$Currency('CHF'),
+		code: 'CHF',
+		display: 'Swiss Franc',
+		searchWords: _elm_lang$core$Native_List.fromArray(
+			[])
+	},
+		{
+		itemType: _user$project$Main$Currency('MOP'),
+		code: 'MOP',
+		display: 'Pataca',
+		searchWords: _elm_lang$core$Native_List.fromArray(
+			[])
+	},
+		{
+		itemType: _user$project$Main$Currency('MKD'),
+		code: 'MKD',
+		display: 'Denar',
+		searchWords: _elm_lang$core$Native_List.fromArray(
+			[])
+	},
+		{
+		itemType: _user$project$Main$Currency('MGA'),
+		code: 'MGA',
+		display: 'Malagasy Ariary',
+		searchWords: _elm_lang$core$Native_List.fromArray(
+			[])
+	},
+		{
+		itemType: _user$project$Main$Currency('MWK'),
+		code: 'MWK',
+		display: 'Malawi Kwacha',
+		searchWords: _elm_lang$core$Native_List.fromArray(
+			[])
+	},
+		{
+		itemType: _user$project$Main$Currency('MYR'),
+		code: 'MYR',
+		display: 'Malaysian Ringgit',
+		searchWords: _elm_lang$core$Native_List.fromArray(
+			[])
+	},
+		{
+		itemType: _user$project$Main$Currency('MVR'),
+		code: 'MVR',
+		display: 'Rufiyaa',
+		searchWords: _elm_lang$core$Native_List.fromArray(
+			[])
+	},
+		{
+		itemType: _user$project$Main$Currency('MRO'),
+		code: 'MRO',
+		display: 'Ouguiya',
+		searchWords: _elm_lang$core$Native_List.fromArray(
+			[])
+	},
+		{
+		itemType: _user$project$Main$Currency('MUR'),
+		code: 'MUR',
+		display: 'Mauritius Rupee',
+		searchWords: _elm_lang$core$Native_List.fromArray(
+			[])
+	},
+		{
+		itemType: _user$project$Main$Currency('MXN'),
+		code: 'MXN',
+		display: 'Mexican Peso',
+		searchWords: _elm_lang$core$Native_List.fromArray(
+			[])
+	},
+		{
+		itemType: _user$project$Main$Currency('MXV'),
+		code: 'MXV',
+		display: 'Mexican Unidad de Inversion (UDI)',
+		searchWords: _elm_lang$core$Native_List.fromArray(
+			[])
+	},
+		{
+		itemType: _user$project$Main$Currency('MDL'),
+		code: 'MDL',
+		display: 'Moldovan Leu',
+		searchWords: _elm_lang$core$Native_List.fromArray(
+			[])
+	},
+		{
+		itemType: _user$project$Main$Currency('MNT'),
+		code: 'MNT',
+		display: 'Tugrik',
+		searchWords: _elm_lang$core$Native_List.fromArray(
+			[])
+	},
+		{
+		itemType: _user$project$Main$Currency('MAD'),
+		code: 'MAD',
+		display: 'Moroccan Dirham',
+		searchWords: _elm_lang$core$Native_List.fromArray(
+			[])
+	},
+		{
+		itemType: _user$project$Main$Currency('MZN'),
+		code: 'MZN',
+		display: 'Mozambique Metical',
+		searchWords: _elm_lang$core$Native_List.fromArray(
+			[])
+	},
+		{
+		itemType: _user$project$Main$Currency('MMK'),
+		code: 'MMK',
+		display: 'Kyat',
+		searchWords: _elm_lang$core$Native_List.fromArray(
+			[])
+	},
+		{
+		itemType: _user$project$Main$Currency('NAD'),
+		code: 'NAD',
+		display: 'Namibia Dollar',
+		searchWords: _elm_lang$core$Native_List.fromArray(
+			[])
+	},
+		{
+		itemType: _user$project$Main$Currency('NPR'),
+		code: 'NPR',
+		display: 'Nepalese Rupee',
+		searchWords: _elm_lang$core$Native_List.fromArray(
+			[])
+	},
+		{
+		itemType: _user$project$Main$Currency('NIO'),
+		code: 'NIO',
+		display: 'Cordoba Oro',
+		searchWords: _elm_lang$core$Native_List.fromArray(
+			[])
+	},
+		{
+		itemType: _user$project$Main$Currency('NGN'),
+		code: 'NGN',
+		display: 'Naira',
+		searchWords: _elm_lang$core$Native_List.fromArray(
+			[])
+	},
+		{
+		itemType: _user$project$Main$Currency('OMR'),
+		code: 'OMR',
+		display: 'Rial Omani',
+		searchWords: _elm_lang$core$Native_List.fromArray(
+			[])
+	},
+		{
+		itemType: _user$project$Main$Currency('PKR'),
+		code: 'PKR',
+		display: 'Pakistan Rupee',
+		searchWords: _elm_lang$core$Native_List.fromArray(
+			[])
+	},
+		{
+		itemType: _user$project$Main$Currency('PAB'),
+		code: 'PAB',
+		display: 'Balboa',
+		searchWords: _elm_lang$core$Native_List.fromArray(
+			[])
+	},
+		{
+		itemType: _user$project$Main$Currency('PGK'),
+		code: 'PGK',
+		display: 'Kina',
+		searchWords: _elm_lang$core$Native_List.fromArray(
+			[])
+	},
+		{
+		itemType: _user$project$Main$Currency('PYG'),
+		code: 'PYG',
+		display: 'Guarani',
+		searchWords: _elm_lang$core$Native_List.fromArray(
+			[])
+	},
+		{
+		itemType: _user$project$Main$Currency('PEN'),
+		code: 'PEN',
+		display: 'Sol',
+		searchWords: _elm_lang$core$Native_List.fromArray(
+			[])
+	},
+		{
+		itemType: _user$project$Main$Currency('PHP'),
+		code: 'PHP',
+		display: 'Philippine Peso',
+		searchWords: _elm_lang$core$Native_List.fromArray(
+			[])
+	},
+		{
+		itemType: _user$project$Main$Currency('PLN'),
+		code: 'PLN',
+		display: 'Zloty',
+		searchWords: _elm_lang$core$Native_List.fromArray(
+			[])
+	},
+		{
+		itemType: _user$project$Main$Currency('QAR'),
+		code: 'QAR',
+		display: 'Qatari Rial',
+		searchWords: _elm_lang$core$Native_List.fromArray(
+			[])
+	},
+		{
+		itemType: _user$project$Main$Currency('RON'),
+		code: 'RON',
+		display: 'Romanian Leu',
+		searchWords: _elm_lang$core$Native_List.fromArray(
+			[])
+	},
+		{
+		itemType: _user$project$Main$Currency('RUB'),
+		code: 'RUB',
+		display: 'Russian Ruble',
+		searchWords: _elm_lang$core$Native_List.fromArray(
+			[])
+	},
+		{
+		itemType: _user$project$Main$Currency('RWF'),
+		code: 'RWF',
+		display: 'Rwanda Franc',
+		searchWords: _elm_lang$core$Native_List.fromArray(
+			[])
+	},
+		{
+		itemType: _user$project$Main$Currency('SHP'),
+		code: 'SHP',
+		display: 'Saint Helena Pound',
+		searchWords: _elm_lang$core$Native_List.fromArray(
+			[])
+	},
+		{
+		itemType: _user$project$Main$Currency('WST'),
+		code: 'WST',
+		display: 'Tala',
+		searchWords: _elm_lang$core$Native_List.fromArray(
+			[])
+	},
+		{
+		itemType: _user$project$Main$Currency('STD'),
+		code: 'STD',
+		display: 'Dobra',
+		searchWords: _elm_lang$core$Native_List.fromArray(
+			[])
+	},
+		{
+		itemType: _user$project$Main$Currency('SAR'),
+		code: 'SAR',
+		display: 'Saudi Riyal',
+		searchWords: _elm_lang$core$Native_List.fromArray(
+			[])
+	},
+		{
+		itemType: _user$project$Main$Currency('RSD'),
+		code: 'RSD',
+		display: 'Serbian Dinar',
+		searchWords: _elm_lang$core$Native_List.fromArray(
+			[])
+	},
+		{
+		itemType: _user$project$Main$Currency('SCR'),
+		code: 'SCR',
+		display: 'Seychelles Rupee',
+		searchWords: _elm_lang$core$Native_List.fromArray(
+			[])
+	},
+		{
+		itemType: _user$project$Main$Currency('SLL'),
+		code: 'SLL',
+		display: 'Leone',
+		searchWords: _elm_lang$core$Native_List.fromArray(
+			[])
+	},
+		{
+		itemType: _user$project$Main$Currency('SGD'),
+		code: 'SGD',
+		display: 'Singapore Dollar',
+		searchWords: _elm_lang$core$Native_List.fromArray(
+			[])
+	},
+		{
+		itemType: _user$project$Main$Currency('SBD'),
+		code: 'SBD',
+		display: 'Solomon Islands Dollar',
+		searchWords: _elm_lang$core$Native_List.fromArray(
+			[])
+	},
+		{
+		itemType: _user$project$Main$Currency('SOS'),
+		code: 'SOS',
+		display: 'Somali Shilling',
+		searchWords: _elm_lang$core$Native_List.fromArray(
+			[])
+	},
+		{
+		itemType: _user$project$Main$Currency('SSP'),
+		code: 'SSP',
+		display: 'South Sudanese Pound',
+		searchWords: _elm_lang$core$Native_List.fromArray(
+			[])
+	},
+		{
+		itemType: _user$project$Main$Currency('LKR'),
+		code: 'LKR',
+		display: 'Sri Lanka Rupee',
+		searchWords: _elm_lang$core$Native_List.fromArray(
+			[])
+	},
+		{
+		itemType: _user$project$Main$Currency('SDG'),
+		code: 'SDG',
+		display: 'Sudanese Pound',
+		searchWords: _elm_lang$core$Native_List.fromArray(
+			[])
+	},
+		{
+		itemType: _user$project$Main$Currency('SRD'),
+		code: 'SRD',
+		display: 'Surinam Dollar',
+		searchWords: _elm_lang$core$Native_List.fromArray(
+			[])
+	},
+		{
+		itemType: _user$project$Main$Currency('SZL'),
+		code: 'SZL',
+		display: 'Lilangeni',
+		searchWords: _elm_lang$core$Native_List.fromArray(
+			[])
+	},
+		{
+		itemType: _user$project$Main$Currency('SEK'),
+		code: 'SEK',
+		display: 'Swedish Krona',
+		searchWords: _elm_lang$core$Native_List.fromArray(
+			[])
+	},
+		{
+		itemType: _user$project$Main$Currency('CHE'),
+		code: 'CHE',
+		display: 'WIR Euro',
+		searchWords: _elm_lang$core$Native_List.fromArray(
+			[])
+	},
+		{
+		itemType: _user$project$Main$Currency('CHW'),
+		code: 'CHW',
+		display: 'WIR Franc',
+		searchWords: _elm_lang$core$Native_List.fromArray(
+			[])
+	},
+		{
+		itemType: _user$project$Main$Currency('SYP'),
+		code: 'SYP',
+		display: 'Syrian Pound',
+		searchWords: _elm_lang$core$Native_List.fromArray(
+			[])
+	},
+		{
+		itemType: _user$project$Main$Currency('TWD'),
+		code: 'TWD',
+		display: 'New Taiwan Dollar',
+		searchWords: _elm_lang$core$Native_List.fromArray(
+			[])
+	},
+		{
+		itemType: _user$project$Main$Currency('TJS'),
+		code: 'TJS',
+		display: 'Somoni',
+		searchWords: _elm_lang$core$Native_List.fromArray(
+			[])
+	},
+		{
+		itemType: _user$project$Main$Currency('TZS'),
+		code: 'TZS',
+		display: 'Tanzanian Shilling',
+		searchWords: _elm_lang$core$Native_List.fromArray(
+			[])
+	},
+		{
+		itemType: _user$project$Main$Currency('THB'),
+		code: 'THB',
+		display: 'Baht',
+		searchWords: _elm_lang$core$Native_List.fromArray(
+			[])
+	},
+		{
+		itemType: _user$project$Main$Currency('TOP'),
+		code: 'TOP',
+		display: 'Pa’anga',
+		searchWords: _elm_lang$core$Native_List.fromArray(
+			[])
+	},
+		{
+		itemType: _user$project$Main$Currency('TTD'),
+		code: 'TTD',
+		display: 'Trinidad and Tobago Dollar',
+		searchWords: _elm_lang$core$Native_List.fromArray(
+			[])
+	},
+		{
+		itemType: _user$project$Main$Currency('TND'),
+		code: 'TND',
+		display: 'Tunisian Dinar',
+		searchWords: _elm_lang$core$Native_List.fromArray(
+			[])
+	},
+		{
+		itemType: _user$project$Main$Currency('TRY'),
+		code: 'TRY',
+		display: 'Turkish Lira',
+		searchWords: _elm_lang$core$Native_List.fromArray(
+			[])
+	},
+		{
+		itemType: _user$project$Main$Currency('TMT'),
+		code: 'TMT',
+		display: 'Turkmenistan New Manat',
+		searchWords: _elm_lang$core$Native_List.fromArray(
+			[])
+	},
+		{
+		itemType: _user$project$Main$Currency('UGX'),
+		code: 'UGX',
+		display: 'Uganda Shilling',
+		searchWords: _elm_lang$core$Native_List.fromArray(
+			[])
+	},
+		{
+		itemType: _user$project$Main$Currency('UAH'),
+		code: 'UAH',
+		display: 'Hryvnia',
+		searchWords: _elm_lang$core$Native_List.fromArray(
+			[])
+	},
+		{
+		itemType: _user$project$Main$Currency('AED'),
+		code: 'AED',
+		display: 'UAE Dirham',
+		searchWords: _elm_lang$core$Native_List.fromArray(
+			[])
+	},
+		{
+		itemType: _user$project$Main$Currency('USN'),
+		code: 'USN',
+		display: 'US Dollar (Next day)',
+		searchWords: _elm_lang$core$Native_List.fromArray(
+			[])
+	},
+		{
+		itemType: _user$project$Main$Currency('UYU'),
+		code: 'UYU',
+		display: 'Peso Uruguayo',
+		searchWords: _elm_lang$core$Native_List.fromArray(
+			[])
+	},
+		{
+		itemType: _user$project$Main$Currency('UYI'),
+		code: 'UYI',
+		display: 'Uruguay Peso en Unidades Indexadas (URUIURUI)',
+		searchWords: _elm_lang$core$Native_List.fromArray(
+			[])
+	},
+		{
+		itemType: _user$project$Main$Currency('UZS'),
+		code: 'UZS',
+		display: 'Uzbekistan Sum',
+		searchWords: _elm_lang$core$Native_List.fromArray(
+			[])
+	},
+		{
+		itemType: _user$project$Main$Currency('VUV'),
+		code: 'VUV',
+		display: 'Vatu',
+		searchWords: _elm_lang$core$Native_List.fromArray(
+			[])
+	},
+		{
+		itemType: _user$project$Main$Currency('VEF'),
+		code: 'VEF',
+		display: 'Bolívar',
+		searchWords: _elm_lang$core$Native_List.fromArray(
+			[])
+	},
+		{
+		itemType: _user$project$Main$Currency('VND'),
+		code: 'VND',
+		display: 'Dong',
+		searchWords: _elm_lang$core$Native_List.fromArray(
+			[])
+	},
+		{
+		itemType: _user$project$Main$Currency('YER'),
+		code: 'YER',
+		display: 'Yemeni Rial',
+		searchWords: _elm_lang$core$Native_List.fromArray(
+			[])
+	},
+		{
+		itemType: _user$project$Main$Currency('ZMW'),
+		code: 'ZMW',
+		display: 'Zambian Kwacha',
+		searchWords: _elm_lang$core$Native_List.fromArray(
+			[])
+	},
+		{
+		itemType: _user$project$Main$Currency('ZWL'),
+		code: 'ZWL',
+		display: 'Zimbabwe Dollar',
+		searchWords: _elm_lang$core$Native_List.fromArray(
+			[])
 	}
 	]);
 var _user$project$Main$SelectizeMsg = function (a) {
@@ -8084,10 +9248,6 @@ var _user$project$Main$update = F2(
 						A2(_elm_lang$core$Platform_Cmd$map, _user$project$Main$SelectizeMsg, selectizeCmd)
 					]));
 		} else {
-			var _p3 = A2(
-				_elm_lang$core$List$map,
-				_elm_lang$core$Debug$log('DEBUG6'),
-				_user$project$Main$currencies);
 			return A2(
 				_elm_lang$core$Platform_Cmd_ops['!'],
 				model,

@@ -72,9 +72,9 @@ score needle hay =
             Fuzzy.match [] [] cleanNeedle (clean hay.code)
 
         displayScore =
-            Fuzzy.match [] [] cleanNeedle (clean hay.display)
+            Fuzzy.match [] [ " " ] cleanNeedle (clean hay.display)
     in
-        ( max codeScore.score displayScore.score, hay )
+        ( min codeScore.score displayScore.score, hay )
 
 
 diffItems : Items x -> Items x -> Items x
@@ -94,22 +94,23 @@ update : Msg -> Model x -> ( Model x, Cmd Msg )
 update msg model =
     case msg of
         Input string ->
-            let
-                -- unselectedItems =
-                --     case model.selectedItems of
-                --         Nothing ->
-                --             model.availableItems
-                --
-                --         Just selectedItems ->
-                --             diffItems model.availableItems selectedItems
-                unselectedItems =
-                    model.availableItems
+            if (String.length string < 2) then
+                { model | boxItems = [] } ! []
+            else
+                let
+                    unselectedItems =
+                        case model.selectedItems of
+                            Nothing ->
+                                model.availableItems
 
-                boxItems =
-                    List.map (score string) unselectedItems
-                        |> List.sortBy fst
-            in
-                { model | boxItems = boxItems } ! []
+                            Just selectedItems ->
+                                diffItems model.availableItems selectedItems
+
+                    boxItems =
+                        List.map (score string) unselectedItems
+                            |> List.sortBy fst
+                in
+                    { model | boxItems = boxItems } ! []
 
 
 
@@ -127,28 +128,17 @@ itemsView items =
 
 
 boxView : List ( Int, Item x ) -> Html Msg
-boxView boxItems' =
+boxView boxItems =
     let
-        _ =
-            Debug.log "DEBUG5" ""
+        filtered =
+            List.take 5 (Debug.log "DEBUG1" boxItems)
+                |> List.filter (((>) 1100) << fst)
+                |> List.map snd
 
-        _ =
-            List.map (Debug.log "DEBUG5") boxItems'
+        boxItemHtml item =
+            div [] [ text item.display ]
     in
-        div [] []
-
-
-
---
---     filtered =
---         List.take 5 (Debug.log "DEBUG1" boxItems)
---             |> List.filter (((>) 1200) << fst)
---             |> List.map snd
---
---     boxItemHtml item =
---         div [] [ text item.display ]
--- in
---     div [] (List.map boxItemHtml filtered)
+        div [] (List.map boxItemHtml filtered)
 
 
 view : Model x -> Html Msg
@@ -156,9 +146,6 @@ view model =
     let
         selectedItems =
             Maybe.withDefault [] model.selectedItems
-
-        _ =
-            Debug.log "DEBUG9" model
     in
         div []
             [ div []

@@ -4,6 +4,7 @@ import Html exposing (..)
 import Html.App as App
 import Selectize exposing (selectizeItem)
 import Html.App
+import Keyboard
 
 
 main : Program Never
@@ -46,6 +47,7 @@ type Msg
     = Added String
     | Removed String
     | SelectizeMsg Selectize.Msg
+    | KeyPress Int
 
 
 update : Msg -> Model -> ( Model, Cmd Msg )
@@ -54,11 +56,21 @@ update msg model =
         SelectizeMsg selectizeMsg ->
             let
                 ( selectizeModel, selectizeCmd ) =
-                    Selectize.update selectizeMsg model.selectize
+                    Selectize.update Nothing (Just selectizeMsg) model.selectize
             in
                 { model | selectize = selectizeModel } ! [ Cmd.map SelectizeMsg selectizeCmd ]
 
-        _ ->
+        KeyPress keyCode ->
+            let
+                ( selectizeModel, selectizeCmd ) =
+                    Selectize.update (Just keyCode) Nothing model.selectize
+            in
+                { model | selectize = selectizeModel } ! [ Cmd.map SelectizeMsg selectizeCmd ]
+
+        Added _ ->
+            model ! []
+
+        Removed _ ->
             model ! []
 
 
@@ -75,7 +87,7 @@ view model =
 
 subscriptions : Model -> Sub Msg
 subscriptions model =
-    Sub.none
+    Keyboard.downs KeyPress
 
 
 currencies : List (Selectize.Item CurrencyRec)

@@ -1,7 +1,9 @@
 module Selectize exposing (init, update, view, selectizeItem, Model, Msg, Item)
 
 import Html exposing (..)
+import Html.Attributes exposing (value, defaultValue)
 import Html.Events exposing (onInput)
+import Html.Keyed
 import Fuzzy
 import String
 
@@ -15,6 +17,12 @@ type alias Item x =
     , display : String
     , searchWords : List String
     }
+
+
+type Status
+    = Idle
+    | Editing
+    | Initial
 
 
 selectizeItem : x -> String -> String -> List String -> Item x
@@ -31,19 +39,26 @@ type alias Items x =
 
 
 type alias Model x =
-    { initialItems : Items x
-    , selectedItems : Maybe (Items x)
+    { selectedItems : Items x
     , availableItems : Items x
-    , boxItems : List ( Int, Item x )
+    , boxItems : Items x
+    , boxLength : Int
+    , boxPosition : Int
+    , boxShow : Bool
+    , status : Status
     }
 
 
 init : Items x -> Items x -> ( Model x, Cmd Msg )
 init initialItems availableItems =
-    { initialItems = initialItems
-    , availableItems = availableItems
-    , selectedItems = Just initialItems
+    { availableItems = availableItems
+    , selectedItems = initialItems
     , boxItems = []
+    , boxLength = 5
+    , boxPosition = 0
+    , boxShow = False
+    , status = Initial
+    , generation = 0
     }
         ! []
 
@@ -90,27 +105,87 @@ diffItems a b =
         List.filter (notInB b) a
 
 
-update : Msg -> Model x -> ( Model x, Cmd Msg )
-update msg model =
-    case msg of
-        Input string ->
-            if (String.length string < 2) then
-                { model | boxItems = [] } ! []
-            else
+updateInput : String -> Model x -> ( Model x, Cmd Msg )
+updateInput string model =
+    if (String.length string < 2) then
+        { model | status = Editing, boxItems = [] } ! []
+    else
+        let
+            unselectedItems =
+                diffItems model.availableItems model.selectedItems
+
+            boxItems =
+                List.map (score string) unselectedItems
+                    |> List.sortBy fst
+                    |> List.take model.boxLength
+                    |> List.filter (((>) 1100) << fst)
+                    |> List.map snd
+        in
+            { model | status = Editing, boxItems = boxItems } ! []
+
+
+updateKey : Int -> Model x -> ( Model x, Cmd Msg )
+updateKey keyCode model =
+    case keyCode of
+        -- up
+        38 ->
+            { model | boxPosition = (max 0 (model.boxPosition - 1)) } ! []
+
+        -- down
+        40 ->
+            { model
+                | boxPosition =
+                    (min ((List.length model.boxItems) - 1)
+                        (model.boxPosition + 1)
+                    )
+            }
+                ! []
+
+        -- enter
+        13 ->
+            let
+                maybeItem =
+                    (List.head << (List.drop model.boxPosition)) model.boxItems
+            in
+                case maybeItem of
+                    Nothing ->
+                        model ! []
+
+                    Just item ->
+                        { model
+                            | status = Idle
+                            , generation = model.generation + 1
+                            , selectedItems = model.selectedItems ++ [ item ]
+                        }
+                            ! []
+
+        _ ->
+            model ! []
+
+
+update : Maybe Int -> Maybe Msg -> Model x -> ( Model x, Cmd Msg )
+update maybeKeyCode maybeMsg model =
+    let
+        ( model1, cmd1 ) =
+            case maybeMsg of
+                Nothing ->
+                    model ! []
+
+                Just msg ->
+                    case msg of
+                        Input string ->
+                            updateInput string model
+    in
+        case maybeKeyCode of
+            Nothing ->
+                ( model1, cmd1 )
+
+            Just keyCode ->
                 let
-                    unselectedItems =
-                        case model.selectedItems of
-                            Nothing ->
-                                model.availableItems
-
-                            Just selectedItems ->
-                                diffItems model.availableItems selectedItems
-
-                    boxItems =
-                        List.map (score string) unselectedItems
-                            |> List.sortBy fst
+                    ( model2, cmd2 ) =
+                        updateKey keyCode model1
                 in
-                    { model | boxItems = boxItems } ! []
+                    model2 ! [ cmd1, cmd2 ]
 
 
 
@@ -127,30 +202,33 @@ itemsView items =
     div [] (List.map itemView items)
 
 
-boxView : List ( Int, Item x ) -> Html Msg
-boxView boxItems =
+boxView : Int -> Items x -> Html Msg
+boxView boxPosition boxItems =
     let
-        filtered =
-            List.take 5 (Debug.log "DEBUG1" boxItems)
-                |> List.filter (((>) 1100) << fst)
-                |> List.map snd
-
-        boxItemHtml item =
-            div [] [ text item.display ]
+        boxItemHtml pos item =
+            if boxPosition == pos then
+                div [] [ text ("* " ++ item.display) ]
+            else
+                div [] [ text item.display ]
     in
-        div [] (List.map boxItemHtml filtered)
+        div [] (List.indexedMap boxItemHtml boxItems)
 
 
 view : Model x -> Html Msg
 view model =
     let
-        selectedItems =
-            Maybe.withDefault [] model.selectedItems
+        editInput =
+            input [ onInput Input ] []
     in
         div []
             [ div []
-                [ div [] [ itemsView selectedItems ]
-                , input [ onInput Input ] []
+                [ div [] [ itemsView (Debug.log "DEBUG1" model.selectedItems) ]
+                , Html.Keyed.node "div"
+                    []
+                    [ ( "gen-" ++ (toString model.generation)
+                      , editInput
+                      )
+                    ]
                 ]
-            , boxView model.boxItems
+            , boxView model.boxPosition model.boxItems
             ]

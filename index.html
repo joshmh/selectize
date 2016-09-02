@@ -7887,27 +7887,6 @@ var _user$project$Selectize$itemsView = function (items) {
 			[]),
 		A2(_elm_lang$core$List$map, _user$project$Selectize$itemView, items));
 };
-var _user$project$Selectize$update = F2(
-	function (msg, model) {
-		var _p2 = msg;
-		var unselectedItems = model.availableItems;
-		var model = _elm_lang$core$Native_Utils.update(
-			model,
-			{boxItems: boxItems$});
-		var boxItems$ = A2(
-			_elm_lang$core$List$map,
-			F2(
-				function (v0, v1) {
-					return {ctor: '_Tuple2', _0: v0, _1: v1};
-				})(1),
-			unselectedItems);
-		var _p3 = A2(_elm_lang$core$Debug$log, 'DEBUG8', boxItems$);
-		return A2(
-			_elm_lang$core$Platform_Cmd_ops['!'],
-			model,
-			_elm_lang$core$Native_List.fromArray(
-				[]));
-	});
 var _user$project$Selectize$diffItems = F2(
 	function (a, b) {
 		var isEqual = F2(
@@ -7956,6 +7935,25 @@ var _user$project$Selectize$score = F2(
 			_1: hay
 		};
 	});
+var _user$project$Selectize$update = F2(
+	function (msg, model) {
+		var _p2 = msg;
+		var unselectedItems = model.availableItems;
+		var boxItems = A2(
+			_elm_lang$core$List$sortBy,
+			_elm_lang$core$Basics$fst,
+			A2(
+				_elm_lang$core$List$map,
+				_user$project$Selectize$score(_p2._0),
+				unselectedItems));
+		return A2(
+			_elm_lang$core$Platform_Cmd_ops['!'],
+			_elm_lang$core$Native_Utils.update(
+				model,
+				{boxItems: boxItems}),
+			_elm_lang$core$Native_List.fromArray(
+				[]));
+	});
 var _user$project$Selectize$init = F2(
 	function (initialItems, availableItems) {
 		return A2(
@@ -7986,7 +7984,7 @@ var _user$project$Selectize$Input = function (a) {
 	return {ctor: 'Input', _0: a};
 };
 var _user$project$Selectize$view = function (model) {
-	var _p4 = A2(_elm_lang$core$Debug$log, 'DEBUG9', model);
+	var _p3 = A2(_elm_lang$core$Debug$log, 'DEBUG9', model);
 	var selectedItems = A2(
 		_elm_lang$core$Maybe$withDefault,
 		_elm_lang$core$Native_List.fromArray(

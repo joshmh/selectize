@@ -105,21 +105,11 @@ update msg model =
                 unselectedItems =
                     model.availableItems
 
-                -- boxItems =
-                --     List.map (score string) unselectedItems
-                boxItems' =
-                    List.map ((,) 1) unselectedItems
-
-                --    |> List.sortBy fst
-                _ =
-                    Debug.log "DEBUG8" boxItems'
-
-                model =
-                    { model | boxItems = boxItems' }
-
-                -- model
+                boxItems =
+                    List.map (score string) unselectedItems
+                        |> List.sortBy fst
             in
-                model ! []
+                { model | boxItems = boxItems } ! []
 
 
 

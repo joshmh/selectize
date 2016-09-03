@@ -9002,33 +9002,6 @@ var _tripokey$elm_fuzzy$Fuzzy$AddPenalty = function (a) {
 var _tripokey$elm_fuzzy$Fuzzy$addPenalty = function (penalty) {
 	return _tripokey$elm_fuzzy$Fuzzy$AddPenalty(penalty);
 };
-var _user$project$Selectize$boxView = F2(
-	function (boxPosition, boxItems) {
-		var boxItemHtml = F2(
-			function (pos, item) {
-				return _elm_lang$core$Native_Utils.eq(boxPosition, pos) ? A2(
-					_elm_lang$html$Html$div,
-					_elm_lang$core$Native_List.fromArray(
-						[]),
-					_elm_lang$core$Native_List.fromArray(
-						[
-							_elm_lang$html$Html$text(
-							A2(_elm_lang$core$Basics_ops['++'], '* ', item.display))
-						])) : A2(
-					_elm_lang$html$Html$div,
-					_elm_lang$core$Native_List.fromArray(
-						[]),
-					_elm_lang$core$Native_List.fromArray(
-						[
-							_elm_lang$html$Html$text(item.display)
-						]));
-			});
-		return A2(
-			_elm_lang$html$Html$div,
-			_elm_lang$core$Native_List.fromArray(
-				[]),
-			A2(_elm_lang$core$List$indexedMap, boxItemHtml, boxItems));
-	});
 var _user$project$Selectize$itemView = function (item) {
 	return A2(
 		_elm_lang$html$Html$div,
@@ -9106,25 +9079,7 @@ var _user$project$Selectize$Model = F8(
 	function (a, b, c, d, e, f, g, h) {
 		return {selectedItems: a, availableItems: b, boxItems: c, boxLength: d, boxPosition: e, boxShow: f, status: g, inputText: h};
 	});
-var _user$project$Selectize$Initial = {ctor: 'Initial'};
-var _user$project$Selectize$init = F2(
-	function (initialItems, availableItems) {
-		return A2(
-			_elm_lang$core$Platform_Cmd_ops['!'],
-			{
-				availableItems: availableItems,
-				selectedItems: initialItems,
-				boxItems: _elm_lang$core$Native_List.fromArray(
-					[]),
-				boxLength: 5,
-				boxPosition: 0,
-				boxShow: false,
-				status: _user$project$Selectize$Initial,
-				inputText: ''
-			},
-			_elm_lang$core$Native_List.fromArray(
-				[]));
-	});
+var _user$project$Selectize$Cleared = {ctor: 'Cleared'};
 var _user$project$Selectize$Editing = {ctor: 'Editing'};
 var _user$project$Selectize$updateInput = F2(
 	function (string, model) {
@@ -9178,7 +9133,56 @@ var _user$project$Selectize$updateInput = F2(
 					[]));
 		}
 	});
-var _user$project$Selectize$Idle = {ctor: 'Idle'};
+var _user$project$Selectize$boxView = function (model) {
+	var boxItemHtml = F2(
+		function (pos, item) {
+			return _elm_lang$core$Native_Utils.eq(model.boxPosition, pos) ? A2(
+				_elm_lang$html$Html$div,
+				_elm_lang$core$Native_List.fromArray(
+					[]),
+				_elm_lang$core$Native_List.fromArray(
+					[
+						_elm_lang$html$Html$text(
+						A2(_elm_lang$core$Basics_ops['++'], '* ', item.display))
+					])) : A2(
+				_elm_lang$html$Html$div,
+				_elm_lang$core$Native_List.fromArray(
+					[]),
+				_elm_lang$core$Native_List.fromArray(
+					[
+						_elm_lang$html$Html$text(item.display)
+					]));
+		});
+	return _elm_lang$core$Native_Utils.eq(model.status, _user$project$Selectize$Editing) ? A2(
+		_elm_lang$html$Html$div,
+		_elm_lang$core$Native_List.fromArray(
+			[]),
+		A2(_elm_lang$core$List$indexedMap, boxItemHtml, model.boxItems)) : A2(
+		_elm_lang$html$Html$div,
+		_elm_lang$core$Native_List.fromArray(
+			[]),
+		_elm_lang$core$Native_List.fromArray(
+			[]));
+};
+var _user$project$Selectize$Initial = {ctor: 'Initial'};
+var _user$project$Selectize$init = F2(
+	function (initialItems, availableItems) {
+		return A2(
+			_elm_lang$core$Platform_Cmd_ops['!'],
+			{
+				availableItems: availableItems,
+				selectedItems: initialItems,
+				boxItems: _elm_lang$core$Native_List.fromArray(
+					[]),
+				boxLength: 5,
+				boxPosition: 0,
+				boxShow: false,
+				status: _user$project$Selectize$Initial,
+				inputText: ''
+			},
+			_elm_lang$core$Native_List.fromArray(
+				[]));
+	});
 var _user$project$Selectize$updateKey = F2(
 	function (keyCode, model) {
 		var _p1 = keyCode;
@@ -9224,7 +9228,7 @@ var _user$project$Selectize$updateKey = F2(
 						_elm_lang$core$Native_Utils.update(
 							model,
 							{
-								status: _user$project$Selectize$Idle,
+								status: _user$project$Selectize$Cleared,
 								selectedItems: A2(
 									_elm_lang$core$Basics_ops['++'],
 									model.selectedItems,
@@ -9232,6 +9236,27 @@ var _user$project$Selectize$updateKey = F2(
 										[_p3._0])),
 								inputText: ''
 							}),
+						_elm_lang$core$Native_List.fromArray(
+							[]));
+				}
+			case 8:
+				if (_elm_lang$core$Native_Utils.eq(model.status, _user$project$Selectize$Initial)) {
+					var allButLast = A2(
+						_elm_lang$core$Basics$max,
+						0,
+						_elm_lang$core$List$length(model.selectedItems) - 1);
+					var newSelectedItems = A2(_elm_lang$core$List$take, allButLast, model.selectedItems);
+					return A2(
+						_elm_lang$core$Platform_Cmd_ops['!'],
+						_elm_lang$core$Native_Utils.update(
+							model,
+							{selectedItems: newSelectedItems}),
+						_elm_lang$core$Native_List.fromArray(
+							[]));
+				} else {
+					return A2(
+						_elm_lang$core$Platform_Cmd_ops['!'],
+						model,
 						_elm_lang$core$Native_List.fromArray(
 							[]));
 				}
@@ -9252,11 +9277,11 @@ var _user$project$Selectize$update = F2(
 			case 'KeyDown':
 				return A2(_user$project$Selectize$updateKey, _p4._0, model);
 			default:
-				return (_elm_lang$core$Native_Utils.eq(model.status, _user$project$Selectize$Idle) && _elm_lang$core$Native_Utils.eq(_p4._0, 13)) ? A2(
+				return (_elm_lang$core$Native_Utils.eq(model.status, _user$project$Selectize$Cleared) && _elm_lang$core$Native_Utils.eq(_p4._0, 13)) ? A2(
 					_elm_lang$core$Platform_Cmd_ops['!'],
 					_elm_lang$core$Native_Utils.update(
 						model,
-						{status: _user$project$Selectize$Editing}),
+						{status: _user$project$Selectize$Initial}),
 					_elm_lang$core$Native_List.fromArray(
 						[])) : A2(
 					_elm_lang$core$Platform_Cmd_ops['!'],
@@ -9337,7 +9362,7 @@ var _user$project$Selectize$view = function (model) {
 							])),
 						editInput
 					])),
-				A2(_user$project$Selectize$boxView, model.boxPosition, model.boxItems)
+				_user$project$Selectize$boxView(model)
 			]));
 };
 var _user$project$Main$Model = function (a) {

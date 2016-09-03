@@ -30,9 +30,9 @@ type alias Item x =
 
 
 type Status
-    = Idle
+    = Initial
     | Editing
-    | Initial
+    | Cleared
 
 
 selectizeItem : x -> String -> String -> List String -> Item x
@@ -166,11 +166,25 @@ updateKey keyCode model =
 
                     Just item ->
                         { model
-                            | status = Idle
+                            | status = Cleared
                             , selectedItems = model.selectedItems ++ [ item ]
                             , inputText = ""
                         }
                             ! []
+
+        -- backspace
+        8 ->
+            if model.status == Initial then
+                let
+                    allButLast =
+                        max 0 ((List.length model.selectedItems) - 1)
+
+                    newSelectedItems =
+                        List.take allButLast model.selectedItems
+                in
+                    { model | selectedItems = newSelectedItems } ! []
+            else
+                model ! []
 
         _ ->
             model ! []
@@ -186,8 +200,8 @@ update msg model =
             updateKey code model
 
         KeyUp code ->
-            if model.status == Idle && code == 13 then
-                { model | status = Editing } ! []
+            if model.status == Cleared && code == 13 then
+                { model | status = Initial } ! []
             else
                 model ! []
 
@@ -206,16 +220,19 @@ itemsView items =
     div [] (List.map itemView items)
 
 
-boxView : Int -> Items x -> Html Msg
-boxView boxPosition boxItems =
+boxView : Model x -> Html Msg
+boxView model =
     let
         boxItemHtml pos item =
-            if boxPosition == pos then
+            if model.boxPosition == pos then
                 div [] [ text ("* " ++ item.display) ]
             else
                 div [] [ text item.display ]
     in
-        div [] (List.indexedMap boxItemHtml boxItems)
+        if model.status == Editing then
+            div [] (List.indexedMap boxItemHtml model.boxItems)
+        else
+            div [] []
 
 
 view : Model x -> Html Msg
@@ -229,7 +246,7 @@ view model =
                 Editing ->
                     input [ onInput Input ] []
 
-                Idle ->
+                Cleared ->
                     input [ value "", onInput Input ] []
     in
         div []
@@ -237,7 +254,7 @@ view model =
                 [ div [] [ itemsView (Debug.log "DEBUG1" model.selectedItems) ]
                 , editInput
                 ]
-            , boxView model.boxPosition model.boxItems
+            , boxView model
             ]
 
 

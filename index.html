@@ -9075,9 +9075,10 @@ var _user$project$Selectize$Item = F4(
 	function (a, b, c, d) {
 		return {itemType: a, code: b, display: c, searchWords: d};
 	});
+var _user$project$Selectize$HtmlClasses = {};
 var _user$project$Selectize$Model = F8(
 	function (a, b, c, d, e, f, g, h) {
-		return {selectedItems: a, availableItems: b, boxItems: c, boxLength: d, boxPosition: e, boxShow: f, status: g, inputText: h};
+		return {selectedItems: a, availableItems: b, boxItems: c, boxLength: d, boxPosition: e, boxShow: f, maxItems: g, status: h};
 	});
 var _user$project$Selectize$Cleared = {ctor: 'Cleared'};
 var _user$project$Selectize$Editing = {ctor: 'Editing'};
@@ -9093,8 +9094,7 @@ var _user$project$Selectize$updateInput = F2(
 					{
 						status: _user$project$Selectize$Editing,
 						boxItems: _elm_lang$core$Native_List.fromArray(
-							[]),
-						inputText: string
+							[])
 					}),
 				_elm_lang$core$Native_List.fromArray(
 					[]));
@@ -9128,7 +9128,7 @@ var _user$project$Selectize$updateInput = F2(
 				_elm_lang$core$Platform_Cmd_ops['!'],
 				_elm_lang$core$Native_Utils.update(
 					model,
-					{status: _user$project$Selectize$Editing, inputText: string, boxItems: boxItems}),
+					{status: _user$project$Selectize$Editing, boxItems: boxItems}),
 				_elm_lang$core$Native_List.fromArray(
 					[]));
 		}
@@ -9165,8 +9165,8 @@ var _user$project$Selectize$boxView = function (model) {
 			[]));
 };
 var _user$project$Selectize$Initial = {ctor: 'Initial'};
-var _user$project$Selectize$init = F2(
-	function (initialItems, availableItems) {
+var _user$project$Selectize$init = F3(
+	function (maxItems, initialItems, availableItems) {
 		return A2(
 			_elm_lang$core$Platform_Cmd_ops['!'],
 			{
@@ -9177,8 +9177,8 @@ var _user$project$Selectize$init = F2(
 				boxLength: 5,
 				boxPosition: 0,
 				boxShow: false,
-				status: _user$project$Selectize$Initial,
-				inputText: ''
+				maxItems: maxItems,
+				status: _user$project$Selectize$Initial
 			},
 			_elm_lang$core$Native_List.fromArray(
 				[]));
@@ -9234,7 +9234,7 @@ var _user$project$Selectize$updateKey = F2(
 									model.selectedItems,
 									_elm_lang$core$Native_List.fromArray(
 										[_p3._0])),
-								inputText: ''
+								boxPosition: 0
 							}),
 						_elm_lang$core$Native_List.fromArray(
 							[]));
@@ -9310,11 +9310,20 @@ var _user$project$Selectize$view = function (model) {
 		var _p5 = model.status;
 		switch (_p5.ctor) {
 			case 'Initial':
-				return A2(
+				return (_elm_lang$core$Native_Utils.cmp(
+					_elm_lang$core$List$length(model.selectedItems),
+					model.maxItems) < 0) ? A2(
 					_elm_lang$html$Html$input,
 					_elm_lang$core$Native_List.fromArray(
 						[
 							_elm_lang$html$Html_Events$onInput(_user$project$Selectize$Input)
+						]),
+					_elm_lang$core$Native_List.fromArray(
+						[])) : A2(
+					_elm_lang$html$Html$input,
+					_elm_lang$core$Native_List.fromArray(
+						[
+							_elm_lang$html$Html_Attributes$readonly(true)
 						]),
 					_elm_lang$core$Native_List.fromArray(
 						[]));
@@ -9357,8 +9366,7 @@ var _user$project$Selectize$view = function (model) {
 							[]),
 						_elm_lang$core$Native_List.fromArray(
 							[
-								_user$project$Selectize$itemsView(
-								A2(_elm_lang$core$Debug$log, 'DEBUG1', model.selectedItems))
+								_user$project$Selectize$itemsView(model.selectedItems)
 							])),
 						editInput
 					])),
@@ -10526,8 +10534,9 @@ var _user$project$Main$SelectizeMsg = function (a) {
 	return {ctor: 'SelectizeMsg', _0: a};
 };
 var _user$project$Main$init = function () {
-	var _p0 = A2(
+	var _p0 = A3(
 		_user$project$Selectize$init,
+		3,
 		_elm_lang$core$Native_List.fromArray(
 			[]),
 		_user$project$Main$currencies);

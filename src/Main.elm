@@ -34,7 +34,7 @@ init : ( Model, Cmd Msg )
 init =
     let
         ( selectizeModel, selectizeCmd ) =
-            Selectize.init [] currencies
+            Selectize.init 3 [] currencies
     in
         { selectize = selectizeModel } ! [ Cmd.map SelectizeMsg selectizeCmd ]
 

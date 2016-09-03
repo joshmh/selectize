@@ -12,7 +12,7 @@ module Selectize
         )
 
 import Html exposing (..)
-import Html.Attributes exposing (value, defaultValue)
+import Html.Attributes exposing (value, defaultValue, readonly)
 import Html.Events exposing (onInput)
 import Fuzzy
 import String
@@ -35,6 +35,10 @@ type Status
     | Cleared
 
 
+type alias HtmlClasses =
+    {}
+
+
 selectizeItem : x -> String -> String -> List String -> Item x
 selectizeItem itemType code display searchWords =
     { itemType = itemType
@@ -55,21 +59,21 @@ type alias Model x =
     , boxLength : Int
     , boxPosition : Int
     , boxShow : Bool
+    , maxItems : Int
     , status : Status
-    , inputText : String
     }
 
 
-init : Items x -> Items x -> ( Model x, Cmd Msg )
-init initialItems availableItems =
+init : Int -> Items x -> Items x -> ( Model x, Cmd Msg )
+init maxItems initialItems availableItems =
     { availableItems = availableItems
     , selectedItems = initialItems
     , boxItems = []
     , boxLength = 5
     , boxPosition = 0
     , boxShow = False
+    , maxItems = maxItems
     , status = Initial
-    , inputText = ""
     }
         ! []
 
@@ -121,7 +125,7 @@ diffItems a b =
 updateInput : String -> Model x -> ( Model x, Cmd Msg )
 updateInput string model =
     if (String.length string < 2) then
-        { model | status = Editing, boxItems = [], inputText = string } ! []
+        { model | status = Editing, boxItems = [] } ! []
     else
         let
             unselectedItems =
@@ -134,7 +138,7 @@ updateInput string model =
                     |> List.filter (((>) 1100) << fst)
                     |> List.map snd
         in
-            { model | status = Editing, inputText = string, boxItems = boxItems } ! []
+            { model | status = Editing, boxItems = boxItems } ! []
 
 
 updateKey : Int -> Model x -> ( Model x, Cmd Msg )
@@ -168,7 +172,7 @@ updateKey keyCode model =
                         { model
                             | status = Cleared
                             , selectedItems = model.selectedItems ++ [ item ]
-                            , inputText = ""
+                            , boxPosition = 0
                         }
                             ! []
 
@@ -241,7 +245,10 @@ view model =
         editInput =
             case model.status of
                 Initial ->
-                    input [ onInput Input ] []
+                    if (List.length model.selectedItems) < model.maxItems then
+                        input [ onInput Input ] []
+                    else
+                        input [ readonly True ] []
 
                 Editing ->
                     input [ onInput Input ] []
@@ -251,7 +258,7 @@ view model =
     in
         div []
             [ div []
-                [ div [] [ itemsView (Debug.log "DEBUG1" model.selectedItems) ]
+                [ div [] [ itemsView model.selectedItems ]
                 , editInput
                 ]
             , boxView model

@@ -44,9 +44,7 @@ init =
 
 
 type Msg
-    = Added String
-    | Removed String
-    | SelectizeMsg Selectize.Msg
+    = SelectizeMsg Selectize.Msg
     | KeyDown Int
     | KeyUp Int
 
@@ -70,12 +68,6 @@ update msg model =
 
             KeyUp keyCode ->
                 updateSelectize (Selectize.keyUp keyCode)
-
-            Added _ ->
-                model ! []
-
-            Removed _ ->
-                model ! []
 
 
 

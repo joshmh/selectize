@@ -53,33 +53,29 @@ type Msg
 
 update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
-    case msg of
-        SelectizeMsg selectizeMsg ->
+    let
+        updateSelectize selectizeMsg =
             let
                 ( selectizeModel, selectizeCmd ) =
                     Selectize.update selectizeMsg model.selectize
             in
                 { model | selectize = selectizeModel } ! [ Cmd.map SelectizeMsg selectizeCmd ]
+    in
+        case msg of
+            SelectizeMsg selectizeMsg ->
+                updateSelectize selectizeMsg
 
-        KeyDown keyCode ->
-            let
-                ( selectizeModel, selectizeCmd ) =
-                    Selectize.update (Selectize.keyDown keyCode) model.selectize
-            in
-                { model | selectize = selectizeModel } ! [ Cmd.map SelectizeMsg selectizeCmd ]
+            KeyDown keyCode ->
+                updateSelectize (Selectize.keyDown keyCode)
 
-        KeyUp keyCode ->
-            let
-                ( selectizeModel, selectizeCmd ) =
-                    Selectize.update (Selectize.keyUp keyCode) model.selectize
-            in
-                { model | selectize = selectizeModel } ! [ Cmd.map SelectizeMsg selectizeCmd ]
+            KeyUp keyCode ->
+                updateSelectize (Selectize.keyUp keyCode)
 
-        Added _ ->
-            model ! []
+            Added _ ->
+                model ! []
 
-        Removed _ ->
-            model ! []
+            Removed _ ->
+                model ! []
 
 
 

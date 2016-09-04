@@ -5,7 +5,6 @@ module Selectize
         , view
         , selectizeItem
         , Model
-        , Msg
         , Item
         , keyDown
         )
@@ -24,6 +23,14 @@ type alias Item =
     { code : String
     , display : String
     , searchWords : List String
+    }
+
+
+type alias Config msg =
+    { availableItems : List Item
+    , maxItems : Int
+    , boxLength : Int
+    , toMsg : Model -> msg
     }
 
 
@@ -46,26 +53,14 @@ type alias Items =
 
 
 type alias Model =
-    { selectedItems : Items
-    , availableItems : Items
-    , boxItems : Items
-    , boxLength : Int
-    , boxPosition : Int
-    , boxShow : Bool
-    , maxItems : Int
+    { boxPosition : Int
     , status : Status
     }
 
 
-init : Int -> Items -> Model
-init maxItems availableItems =
-    { availableItems = availableItems
-    , selectedItems = []
-    , boxItems = []
-    , boxLength = 5
-    , boxPosition = 0
-    , boxShow = False
-    , maxItems = maxItems
+init : Model
+init =
+    { boxPosition = 0
     , status = Initial
     }
 
@@ -77,7 +72,6 @@ init maxItems availableItems =
 type Msg
     = Input String
     | KeyDown Int
-    | SelectedItems (List Item)
 
 
 clean : String -> String
@@ -198,15 +192,6 @@ update msg model =
         KeyDown code ->
             updateKey code model
 
-        SelectedItems items ->
-            { model
-                | selectedItems = items
-                , boxItems = []
-                , boxPosition = 0
-                , status = Cleared
-            }
-                ! []
-
 
 
 -- VIEW
@@ -237,8 +222,8 @@ boxView model =
             div [] []
 
 
-view : Model -> Html Msg
-view model =
+view : Config msg -> Model -> List Item -> Html Msg
+view config model selectedItems =
     let
         editInput =
             case model.status of

@@ -8,7 +8,6 @@ module Selectize
         , Msg
         , Item
         , keyDown
-        , keyUp
         )
 
 import Html exposing (..)
@@ -21,9 +20,8 @@ import String
 -- MODEL
 
 
-type alias Item x =
-    { itemType : x
-    , code : String
+type alias Item =
+    { code : String
     , display : String
     , searchWords : List String
     }
@@ -35,27 +33,22 @@ type Status
     | Cleared
 
 
-type alias HtmlClasses =
-    {}
-
-
-selectizeItem : x -> String -> String -> List String -> Item x
-selectizeItem itemType code display searchWords =
-    { itemType = itemType
-    , code = code
+selectizeItem : String -> String -> List String -> Item
+selectizeItem code display searchWords =
+    { code = code
     , display = display
     , searchWords = searchWords
     }
 
 
-type alias Items x =
-    List (Item x)
+type alias Items =
+    List Item
 
 
-type alias Model x =
-    { selectedItems : Items x
-    , availableItems : Items x
-    , boxItems : Items x
+type alias Model =
+    { selectedItems : Items
+    , availableItems : Items
+    , boxItems : Items
     , boxLength : Int
     , boxPosition : Int
     , boxShow : Bool
@@ -64,10 +57,10 @@ type alias Model x =
     }
 
 
-init : Int -> Items x -> Items x -> ( Model x, Cmd Msg )
-init maxItems initialItems availableItems =
+init : Int -> Items -> Model
+init maxItems availableItems =
     { availableItems = availableItems
-    , selectedItems = initialItems
+    , selectedItems = []
     , boxItems = []
     , boxLength = 5
     , boxPosition = 0
@@ -75,7 +68,6 @@ init maxItems initialItems availableItems =
     , maxItems = maxItems
     , status = Initial
     }
-        ! []
 
 
 
@@ -85,7 +77,7 @@ init maxItems initialItems availableItems =
 type Msg
     = Input String
     | KeyDown Int
-    | KeyUp Int
+    | SelectedItems (List Item)
 
 
 clean : String -> String
@@ -94,7 +86,7 @@ clean s =
         |> String.toLower
 
 
-score : String -> Item x -> ( Int, Item x )
+score : String -> Item -> ( Int, Item )
 score needle hay =
     let
         cleanNeedle =
@@ -109,11 +101,11 @@ score needle hay =
         ( min codeScore.score displayScore.score, hay )
 
 
-diffItems : Items x -> Items x -> Items x
+diffItems : Items -> Items -> Items
 diffItems a b =
     let
         isEqual itemA itemB =
-            itemA.itemType == itemB.itemType
+            itemA.code == itemB.code
 
         notInB b item =
             (List.any (isEqual item) b)
@@ -122,7 +114,7 @@ diffItems a b =
         List.filter (notInB b) a
 
 
-updateInput : String -> Model x -> ( Model x, Cmd Msg )
+updateInput : String -> Model -> ( Model, Cmd Msg )
 updateInput string model =
     if (String.length string < 2) then
         { model | status = Editing, boxItems = [] } ! []
@@ -141,7 +133,7 @@ updateInput string model =
             { model | status = Editing, boxItems = boxItems } ! []
 
 
-updateKey : Int -> Model x -> ( Model x, Cmd Msg )
+updateKey : Int -> Model -> ( Model, Cmd Msg )
 updateKey keyCode model =
     case keyCode of
         -- up
@@ -191,10 +183,13 @@ updateKey keyCode model =
                 model ! []
 
         _ ->
-            model ! []
+            if model.status == Cleared then
+                { model | status = Initial } ! []
+            else
+                model ! []
 
 
-update : Msg -> Model x -> ( Model x, Cmd Msg )
+update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
     case msg of
         Input string ->
@@ -203,28 +198,31 @@ update msg model =
         KeyDown code ->
             updateKey code model
 
-        KeyUp code ->
-            if model.status == Cleared && code == 13 then
-                { model | status = Initial } ! []
-            else
-                model ! []
+        SelectedItems items ->
+            { model
+                | selectedItems = items
+                , boxItems = []
+                , boxPosition = 0
+                , status = Cleared
+            }
+                ! []
 
 
 
 -- VIEW
 
 
-itemView : Item x -> Html Msg
+itemView : Item -> Html Msg
 itemView item =
     div [] [ text item.display ]
 
 
-itemsView : List (Item x) -> Html Msg
+itemsView : List Item -> Html Msg
 itemsView items =
     div [] (List.map itemView items)
 
 
-boxView : Model x -> Html Msg
+boxView : Model -> Html Msg
 boxView model =
     let
         boxItemHtml pos item =
@@ -239,7 +237,7 @@ boxView model =
             div [] []
 
 
-view : Model x -> Html Msg
+view : Model -> Html Msg
 view model =
     let
         editInput =
@@ -263,11 +261,6 @@ view model =
                 ]
             , boxView model
             ]
-
-
-keyUp : Int -> Msg
-keyUp code =
-    KeyUp code
 
 
 keyDown : Int -> Msg

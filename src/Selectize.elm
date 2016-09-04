@@ -5,10 +5,13 @@ module Selectize
         , view
         , selectizeItem
         , Model
+        , Msg
         , Item
         , keyDown
+        , keyUp
         )
 
+import Task
 import Html exposing (..)
 import Html.Attributes exposing (value, defaultValue, readonly)
 import Html.Events exposing (onInput)
@@ -23,14 +26,6 @@ type alias Item =
     { code : String
     , display : String
     , searchWords : List String
-    }
-
-
-type alias Config msg =
-    { availableItems : List Item
-    , maxItems : Int
-    , boxLength : Int
-    , toMsg : Model -> msg
     }
 
 
@@ -53,14 +48,24 @@ type alias Items =
 
 
 type alias Model =
-    { boxPosition : Int
+    { maxItems : Int
+    , boxLength : Int
+    , selectedItems : List Item
+    , availableItems : List Item
+    , boxItems : List Item
+    , boxPosition : Int
     , status : Status
     }
 
 
-init : Model
-init =
-    { boxPosition = 0
+init : Int -> Int -> List Item -> List Item -> Model
+init maxItems boxLength selectedItems availableItems =
+    { maxItems = maxItems
+    , boxLength = boxLength
+    , selectedItems = selectedItems
+    , availableItems = availableItems
+    , boxItems = []
+    , boxPosition = 0
     , status = Initial
     }
 
@@ -72,6 +77,7 @@ init =
 type Msg
     = Input String
     | KeyDown Int
+    | KeyUp Int
 
 
 clean : String -> String
@@ -177,10 +183,12 @@ updateKey keyCode model =
                 model ! []
 
         _ ->
-            if model.status == Cleared then
-                { model | status = Initial } ! []
-            else
-                model ! []
+            model ! []
+
+
+dispatch : Msg -> Cmd Msg
+dispatch msg =
+    Task.perform identity identity (Task.succeed msg)
 
 
 update : Msg -> Model -> ( Model, Cmd Msg )
@@ -191,6 +199,12 @@ update msg model =
 
         KeyDown code ->
             updateKey code model
+
+        KeyUp code ->
+            if model.status == Cleared && code == 13 then
+                { model | status = Initial } ! []
+            else
+                model ! []
 
 
 
@@ -222,11 +236,11 @@ boxView model =
             div [] []
 
 
-view : Config msg -> Model -> List Item -> Html Msg
-view config model selectedItems =
+view : Model -> Html Msg
+view model =
     let
         editInput =
-            case model.status of
+            case (Debug.log "DEBUG1" model.status) of
                 Initial ->
                     if (List.length model.selectedItems) < model.maxItems then
                         input [ onInput Input ] []
@@ -246,6 +260,11 @@ view config model selectedItems =
                 ]
             , boxView model
             ]
+
+
+keyUp : Int -> Msg
+keyUp code =
+    KeyUp code
 
 
 keyDown : Int -> Msg

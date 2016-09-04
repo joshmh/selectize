@@ -34,7 +34,7 @@ init : ( Model, Cmd Msg )
 init =
     let
         selectizeModel =
-            Selectize.init 3 []
+            Selectize.init 3 5 [] currencies
     in
         { selectize = selectizeModel } ! []
 
@@ -46,6 +46,7 @@ init =
 type Msg
     = SelectizeMsg Selectize.Msg
     | KeyDown Int
+    | KeyUp Int
 
 
 update : Msg -> Model -> ( Model, Cmd Msg )
@@ -65,6 +66,9 @@ update msg model =
             KeyDown keyCode ->
                 updateSelectize (Selectize.keyDown keyCode)
 
+            KeyUp keyCode ->
+                updateSelectize (Selectize.keyUp keyCode)
+
 
 
 -- VIEW
@@ -79,7 +83,7 @@ view model =
 
 subscriptions : Model -> Sub Msg
 subscriptions model =
-    Sub.batch [ Keyboard.downs KeyDown ]
+    Sub.batch [ Keyboard.downs KeyDown, Keyboard.ups KeyUp ]
 
 
 currencies : List Selectize.Item

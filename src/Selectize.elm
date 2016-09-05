@@ -7,11 +7,13 @@ module Selectize
         , Model
         , Msg
         , Item
+        , HtmlOptions
+        , HtmlClasses
         )
 
 import Task
 import Html exposing (..)
-import Html.Attributes exposing (value, defaultValue, readonly, maxlength)
+import Html.Attributes exposing (value, defaultValue, readonly, maxlength, class, classList)
 import Html.Events exposing (onInput, onBlur, onFocus, on)
 import Fuzzy
 import String
@@ -19,6 +21,27 @@ import Json.Decode
 
 
 -- MODEL
+
+
+type alias HtmlOptions =
+    { instructionsForBlank : String
+    , classes : HtmlClasses
+    }
+
+
+type alias HtmlClasses =
+    { container : String
+    , selectedItems : String
+    , selectedItem : String
+    , boxItems : String
+    , boxItem : String
+    , boxItemActive : String
+    , instructionsForBlank : String
+    }
+
+
+type alias H =
+    HtmlOptions
 
 
 type alias Item =
@@ -219,32 +242,38 @@ update msg model =
 -- VIEW
 
 
-itemView : Item -> Html Msg
-itemView item =
-    div [] [ text item.display ]
+itemView : HtmlOptions -> Item -> Html Msg
+itemView h item =
+    div [ class h.classes.selectedItem ] [ text item.code ]
 
 
-itemsView : List Item -> Html Msg
-itemsView items =
-    div [] (List.map itemView items)
+itemsView : HtmlOptions -> List Item -> Html Msg
+itemsView h items =
+    div [ class h.classes.selectedItems ] (List.map (itemView h) items)
 
 
-boxView : Model -> Html Msg
-boxView model =
+boxView : HtmlOptions -> Model -> Html Msg
+boxView h model =
     let
+        c =
+            h.classes
+
         boxItemHtml pos item =
-            if model.boxPosition == pos then
-                div [] [ text ("* " ++ item.display) ]
-            else
-                div [] [ text item.display ]
+            div
+                [ classList
+                    [ ( c.boxItem, True )
+                    , ( c.boxItemActive, model.boxPosition == pos )
+                    ]
+                ]
+                [ text item.display ]
     in
         case model.status of
             Editing ->
-                div [] (List.indexedMap boxItemHtml model.boxItems)
+                div [ class c.boxItems ] (List.indexedMap boxItemHtml model.boxItems)
 
             Initial ->
                 if ((List.length model.selectedItems) == 0) then
-                    div [] [ text "Start typing for options" ]
+                    div [ class c.instructionsForBlank ] [ text h.instructionsForBlank ]
                 else
                     span [] []
 
@@ -252,8 +281,8 @@ boxView model =
                 span [] []
 
 
-view : Model -> Html Msg
-view model =
+view : HtmlOptions -> Model -> Html Msg
+view h model =
     let
         editInput =
             case (Debug.log "DEBUG1" model.status) of
@@ -272,12 +301,12 @@ view model =
                 Blurred ->
                     input [ readonly True, onFocus Focus ] []
     in
-        div []
+        div [ class h.classes.container ]
             [ div []
-                [ div [] [ itemsView model.selectedItems ]
+                [ div [] [ itemsView h model.selectedItems ]
                 , editInput
                 ]
-            , boxView model
+            , boxView h model
             ]
 
 

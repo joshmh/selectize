@@ -65,10 +65,29 @@ update msg model =
 -- VIEW
 
 
+htmlClasses : Selectize.HtmlClasses
+htmlClasses =
+    { container = "container"
+    , selectedItems = "selectedItems"
+    , selectedItem = "selectedItem"
+    , boxItems = "boxItems"
+    , boxItem = "boxItem"
+    , boxItemActive = "activeBoxItem"
+    , instructionsForBlank = "instructions"
+    }
+
+
+htmlOptions : Selectize.HtmlOptions
+htmlOptions =
+    { instructionsForBlank = "Start typing for options"
+    , classes = htmlClasses
+    }
+
+
 view : Model -> Html Msg
 view model =
     div []
-        [ Html.App.map SelectizeMsg (Selectize.view model.selectize)
+        [ Html.App.map SelectizeMsg (Selectize.view htmlOptions model.selectize)
         ]
 
 

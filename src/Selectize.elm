@@ -7,16 +7,15 @@ module Selectize
         , Model
         , Msg
         , Item
-        , keyDown
-        , keyUp
         )
 
 import Task
 import Html exposing (..)
-import Html.Attributes exposing (value, defaultValue, readonly)
-import Html.Events exposing (onInput)
+import Html.Attributes exposing (value, defaultValue, readonly, maxlength)
+import Html.Events exposing (onInput, onBlur, onFocus, on)
 import Fuzzy
 import String
+import Json.Decode
 
 
 -- MODEL
@@ -33,6 +32,7 @@ type Status
     = Initial
     | Editing
     | Cleared
+    | Blurred
 
 
 selectizeItem : String -> String -> List String -> Item
@@ -66,7 +66,7 @@ init maxItems boxLength selectedItems availableItems =
     , availableItems = availableItems
     , boxItems = []
     , boxPosition = 0
-    , status = Initial
+    , status = Blurred
     }
 
 
@@ -78,6 +78,8 @@ type Msg
     = Input String
     | KeyDown Int
     | KeyUp Int
+    | Blur
+    | Focus
 
 
 clean : String -> String
@@ -206,6 +208,12 @@ update msg model =
             else
                 model ! []
 
+        Blur ->
+            { model | status = Blurred, boxPosition = 0 } ! []
+
+        Focus ->
+            { model | status = Initial, boxPosition = 0 } ! []
+
 
 
 -- VIEW
@@ -230,10 +238,18 @@ boxView model =
             else
                 div [] [ text item.display ]
     in
-        if model.status == Editing then
-            div [] (List.indexedMap boxItemHtml model.boxItems)
-        else
-            div [] []
+        case model.status of
+            Editing ->
+                div [] (List.indexedMap boxItemHtml model.boxItems)
+
+            Initial ->
+                if ((List.length model.selectedItems) == 0) then
+                    div [] [ text "Start typing for options" ]
+                else
+                    span [] []
+
+            _ ->
+                span [] []
 
 
 view : Model -> Html Msg
@@ -243,15 +259,18 @@ view model =
             case (Debug.log "DEBUG1" model.status) of
                 Initial ->
                     if (List.length model.selectedItems) < model.maxItems then
-                        input [ onInput Input ] []
+                        input [ onKeyDown KeyDown, onBlur Blur, onInput Input ] []
                     else
-                        input [ readonly True ] []
+                        input [ maxlength 0, onKeyDown KeyDown ] []
 
                 Editing ->
-                    input [ onInput Input ] []
+                    input [ onKeyDown KeyDown, onBlur Blur, onInput Input ] []
 
                 Cleared ->
-                    input [ value "", onInput Input ] []
+                    input [ onKeyUp KeyUp, value "", onBlur Blur, onInput Input ] []
+
+                Blurred ->
+                    input [ readonly True, onFocus Focus ] []
     in
         div []
             [ div []
@@ -262,11 +281,11 @@ view model =
             ]
 
 
-keyUp : Int -> Msg
-keyUp code =
-    KeyUp code
+onKeyDown : (Int -> msg) -> Attribute msg
+onKeyDown tagger =
+    on "keydown" (Json.Decode.map tagger Html.Events.keyCode)
 
 
-keyDown : Int -> Msg
-keyDown code =
-    KeyDown code
+onKeyUp : (Int -> msg) -> Attribute msg
+onKeyUp tagger =
+    on "keyup" (Json.Decode.map tagger Html.Events.keyCode)

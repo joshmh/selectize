@@ -4,7 +4,6 @@ import Html exposing (..)
 import Html.App as App
 import Selectize exposing (selectizeItem)
 import Html.App
-import Keyboard
 
 
 main : Program Never
@@ -45,8 +44,6 @@ init =
 
 type Msg
     = SelectizeMsg Selectize.Msg
-    | KeyDown Int
-    | KeyUp Int
 
 
 update : Msg -> Model -> ( Model, Cmd Msg )
@@ -63,12 +60,6 @@ update msg model =
             SelectizeMsg selectizeMsg ->
                 updateSelectize selectizeMsg
 
-            KeyDown keyCode ->
-                updateSelectize (Selectize.keyDown keyCode)
-
-            KeyUp keyCode ->
-                updateSelectize (Selectize.keyUp keyCode)
-
 
 
 -- VIEW
@@ -83,7 +74,7 @@ view model =
 
 subscriptions : Model -> Sub Msg
 subscriptions model =
-    Sub.batch [ Keyboard.downs KeyDown, Keyboard.ups KeyUp ]
+    Sub.none
 
 
 currencies : List Selectize.Item

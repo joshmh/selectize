@@ -141,8 +141,8 @@ diffItems a b =
 
 updateInput : String -> Model -> ( Model, Cmd Msg )
 updateInput string model =
-    if (String.length string < 2) then
-        { model | status = Editing, boxItems = [] } ! []
+    if (String.length string == 0) then
+        { model | status = Initial, boxItems = [] } ! []
     else
         let
             unselectedItems =
@@ -272,10 +272,7 @@ boxView h model =
                 div [ class c.boxItems ] (List.indexedMap boxItemHtml model.boxItems)
 
             Initial ->
-                if ((List.length model.selectedItems) == 0) then
-                    div [ class c.instructionsForBlank ] [ text h.instructionsForBlank ]
-                else
-                    span [] []
+                div [ class c.instructionsForBlank ] [ text h.instructionsForBlank ]
 
             _ ->
                 span [] []

@@ -160,52 +160,59 @@ updateInput string model =
 
 updateKey : Int -> Model -> ( Model, Cmd Msg )
 updateKey keyCode model =
-    case keyCode of
-        -- up
-        38 ->
-            { model | boxPosition = (max 0 (model.boxPosition - 1)) } ! []
+    case model.status of
+        Editing ->
+            case keyCode of
+                -- up
+                38 ->
+                    { model | boxPosition = (max 0 (model.boxPosition - 1)) } ! []
 
-        -- down
-        40 ->
-            { model
-                | boxPosition =
-                    (min ((List.length model.boxItems) - 1)
-                        (model.boxPosition + 1)
-                    )
-            }
-                ! []
+                -- down
+                40 ->
+                    { model
+                        | boxPosition =
+                            (min ((List.length model.boxItems) - 1)
+                                (model.boxPosition + 1)
+                            )
+                    }
+                        ! []
 
-        -- enter
-        13 ->
-            let
-                maybeItem =
-                    (List.head << (List.drop model.boxPosition)) model.boxItems
-            in
-                case maybeItem of
-                    Nothing ->
-                        model ! []
+                -- enter
+                13 ->
+                    let
+                        maybeItem =
+                            (List.head << (List.drop model.boxPosition)) model.boxItems
+                    in
+                        case maybeItem of
+                            Nothing ->
+                                model ! []
 
-                    Just item ->
-                        { model
-                            | status = Cleared
-                            , selectedItems = model.selectedItems ++ [ item ]
-                            , boxPosition = 0
-                        }
-                            ! []
+                            Just item ->
+                                { model
+                                    | status = Cleared
+                                    , selectedItems = model.selectedItems ++ [ item ]
+                                    , boxPosition = 0
+                                }
+                                    ! []
 
-        -- backspace
-        8 ->
-            if model.status == Initial then
-                let
-                    allButLast =
-                        max 0 ((List.length model.selectedItems) - 1)
+                _ ->
+                    model ! []
 
-                    newSelectedItems =
-                        List.take allButLast model.selectedItems
-                in
-                    { model | selectedItems = newSelectedItems } ! []
-            else
-                model ! []
+        Initial ->
+            case keyCode of
+                -- backspace
+                8 ->
+                    let
+                        allButLast =
+                            max 0 ((List.length model.selectedItems) - 1)
+
+                        newSelectedItems =
+                            List.take allButLast model.selectedItems
+                    in
+                        { model | selectedItems = newSelectedItems } ! []
+
+                _ ->
+                    model ! []
 
         _ ->
             model ! []
@@ -254,43 +261,46 @@ itemsView h items =
 
 boxView : HtmlOptions -> Model -> Html Msg
 boxView h model =
-    let
-        c =
-            h.classes
+    case model.status of
+        Editing ->
+            let
+                c =
+                    h.classes
 
-        boxItemHtml pos item =
-            div
-                [ classList
-                    [ ( c.boxItem, True )
-                    , ( c.boxItemActive, model.boxPosition == pos )
-                    ]
-                ]
-                [ text item.display ]
-    in
-        case model.status of
-            Editing ->
+                boxItemHtml pos item =
+                    div
+                        [ classList
+                            [ ( c.boxItem, True )
+                            , ( c.boxItemActive, model.boxPosition == pos )
+                            ]
+                        ]
+                        [ text item.display ]
+            in
                 div [ class c.boxItems ] (List.indexedMap boxItemHtml model.boxItems)
 
-            Initial ->
-                div [ class c.instructionsForBlank ] [ text h.instructionsForBlank ]
-
-            _ ->
+        Initial ->
+            if List.length model.selectedItems == model.maxItems then
                 span [] []
+            else
+                div [ class h.classes.instructionsForBlank ] [ text h.instructionsForBlank ]
+
+        _ ->
+            span [] []
 
 
 view : HtmlOptions -> Model -> Html Msg
 view h model =
     let
         editInput =
-            case (Debug.log "DEBUG1" model.status) of
+            case model.status of
                 Initial ->
                     if (List.length model.selectedItems) < model.maxItems then
-                        input [ onKeyDown KeyDown, onBlur Blur, onInput Input ] []
+                        input [ onBlur Blur, onInput Input ] []
                     else
-                        input [ maxlength 0, onKeyDown KeyDown ] []
+                        input [ readonly True ] []
 
                 Editing ->
-                    input [ onKeyDown KeyDown, onBlur Blur, onInput Input ] []
+                    input [ onBlur Blur, onInput Input ] []
 
                 Cleared ->
                     input [ onKeyUp KeyUp, value "", onBlur Blur, onInput Input ] []
@@ -299,7 +309,7 @@ view h model =
                     input [ readonly True, onFocus Focus ] []
     in
         div [ class h.classes.container ]
-            [ div []
+            [ div [ onKeyDown KeyDown ]
                 [ div [] [ itemsView h model.selectedItems ]
                 , editInput
                 ]

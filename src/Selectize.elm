@@ -399,13 +399,13 @@ view h fallbackCodes model =
                     if (List.length model.selectedItems) < model.maxItems then
                         input [ onBlur Blur, onInput Input ] []
                     else
-                        input [ readonly True ] []
+                        input [ onBlur Blur, maxlength 0 ] []
 
                 Idle ->
                     if (List.length model.selectedItems) < model.maxItems then
                         input [ onBlur Blur, onInput Input ] []
                     else
-                        input [ readonly True ] []
+                        input [ onBlur Blur, maxlength 0 ] []
 
                 Editing ->
                     input [ onBlur Blur, onInput Input, class h.classes.inputEditing ] []
@@ -414,7 +414,7 @@ view h fallbackCodes model =
                     input [ onKeyUp KeyUp, value "", onBlur Blur, onInput Input ] []
 
                 Blurred ->
-                    input [ readonly True, onFocus Focus, value "" ] []
+                    input [ maxlength 0, onFocus Focus, value "" ] []
     in
         div [ class h.classes.container ]
             [ div [ class h.classes.selectBox, onKeyDown KeyDown ]

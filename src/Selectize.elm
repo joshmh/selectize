@@ -20,8 +20,6 @@ import Html.Events exposing (onInput, onBlur, onFocus, onMouseDown, onClick, on)
 import Fuzzy
 import String
 import Json.Decode
-import Task
-import Dom
 
 
 -- MODEL
@@ -134,8 +132,6 @@ type Msg
     | MouseClick Item
     | Blur
     | Focus
-    | RequestFocus
-    | NOOP
 
 
 focused : Msg -> Bool
@@ -346,15 +342,6 @@ update msg model =
             }
                 ! []
 
-        RequestFocus ->
-            if model.status == Blurred then
-                model ! [ Task.perform (\_ -> NOOP) (\_ -> NOOP) (Dom.focus "this-id") ]
-            else
-                model ! []
-
-        NOOP ->
-            model ! []
-
 
 
 -- VIEW
@@ -362,7 +349,7 @@ update msg model =
 
 itemView : HtmlOptions -> Bool -> Item -> Html Msg
 itemView h isFallback item =
-    div
+    span
         [ classList
             [ ( h.classes.selectedItem, True )
             , ( h.classes.fallbackItem, isFallback )
@@ -389,7 +376,7 @@ fallbackItemsView h fallbackItems selectedItems model =
             else
                 selectedItems
     in
-        div [ classes ] (List.map (itemView h isFallback) items)
+        span [ classes ] (List.map (itemView h isFallback) items)
 
 
 itemsView : HtmlOptions -> List Item -> List Item -> Model -> Html Msg
@@ -524,15 +511,15 @@ view h fallbackCodes model =
                 Blurred ->
                     input [ id "this-id", maxlength 0, onFocus Focus, value "" ] []
     in
-        div [ class h.classes.container, onClick RequestFocus ]
-            [ div
+        div [ class h.classes.container ]
+            [ label
                 [ classList
                     [ ( h.classes.singleItemContainer, model.maxItems == 1 )
                     , ( h.classes.multiItemContainer, model.maxItems > 1 )
                     ]
                 ]
-                [ div [ class h.classes.selectBox, onKeyDown KeyDown ]
-                    [ div [] [ itemsView h fallbackItems model.selectedItems model ]
+                [ span [ class h.classes.selectBox, onKeyDown KeyDown ]
+                    [ span [] [ itemsView h fallbackItems model.selectedItems model ]
                     , editInput
                     ]
                 , boxView h model

@@ -83,11 +83,13 @@ htmlClasses =
     , selectedItems = "selectedItems"
     , fallbackItems = "fallbackItems"
     , selectedItem = "selectedItem"
+    , boxContainer = "boxContainer"
     , boxItems = "boxItems"
     , boxItem = "boxItem"
     , boxItemActive = "activeBoxItem"
     , selectBox = "selectBox"
-    , instructionsForBlank = "instructions"
+    , info = "info"
+    , infoNoMatches = "infoNoMatches"
     , inputEditing = "inputEditing"
     }
 
@@ -95,6 +97,9 @@ htmlClasses =
 htmlOptions : Selectize.HtmlOptions
 htmlOptions =
     { instructionsForBlank = "Start typing for options"
+    , noMatches = "No matches"
+    , atMaxLength = "Type backspace to edit"
+    , typeForMore = "Type for more options"
     , classes = htmlClasses
     }
 

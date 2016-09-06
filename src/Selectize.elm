@@ -28,6 +28,9 @@ import Json.Decode
 
 type alias HtmlOptions =
     { instructionsForBlank : String
+    , noMatches : String
+    , typeForMore : String
+    , atMaxLength : String
     , classes : HtmlClasses
     }
 
@@ -39,10 +42,12 @@ type alias HtmlClasses =
     , selectedItems : String
     , fallbackItems : String
     , selectedItem : String
+    , boxContainer : String
     , boxItems : String
     , boxItem : String
     , boxItemActive : String
-    , instructionsForBlank : String
+    , info : String
+    , infoNoMatches : String
     , inputEditing : String
     }
 
@@ -384,28 +389,34 @@ editingBoxView h model =
 idleBoxView : HtmlOptions -> Model -> Html Msg
 idleBoxView h model =
     if List.length model.selectedItems == model.maxItems then
-        div []
-            [ div [] [ text "Press backspace to edit" ] ]
+        div [ class h.classes.boxContainer ]
+            [ div [] [ text h.atMaxLength ] ]
     else
-        div []
+        div [ class h.classes.boxContainer ]
             [ editingBoxView h model
-            , div [ class h.classes.instructionsForBlank ] [ text "Type for more options" ]
+            , div [ class h.classes.info ] [ text h.typeForMore ]
             ]
 
 
 noMatches : HtmlOptions -> Model -> Html Msg
 noMatches h model =
     if List.length model.boxItems == 0 then
-        div [] [ text "No matches" ]
+        div
+            [ classList
+                [ ( h.classes.info, True )
+                , ( h.classes.infoNoMatches, True )
+                ]
+            ]
+            [ text h.noMatches ]
     else
         div [] []
 
 
 boxView : HtmlOptions -> Model -> Html Msg
 boxView h model =
-    case (Debug.log "DEBUG1" model.status) of
+    case model.status of
         Editing ->
-            div []
+            div [ class h.classes.boxContainer ]
                 [ editingBoxView h model
                 , noMatches h model
                 ]

@@ -38,7 +38,7 @@ init : ( Model, Cmd Msg )
 init =
     let
         selectizeModel =
-            Selectize.init 1 5 selectedCodes currencies
+            Selectize.init 2 5 selectedCodes currencies
     in
         { selectize = selectizeModel } ! []
 
@@ -101,7 +101,11 @@ htmlOptions =
 
 fallbackCodes : List String
 fallbackCodes =
-    [ "INR", "BTN", "BOB" ]
+    []
+
+
+
+-- [ "INR", "BTN", "BOB" ]
 
 
 view : Model -> Html Msg

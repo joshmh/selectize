@@ -100,7 +100,7 @@ init maxItems boxLength selectedCodes availableItems =
     , boxLength = boxLength
     , selectedItems = pickItems availableItems selectedCodes
     , availableItems = availableItems
-    , boxItems = []
+    , boxItems = List.take boxLength availableItems
     , boxPosition = 0
     , status = Blurred
     }
@@ -171,7 +171,7 @@ diffItems a b =
 updateInput : String -> Model -> ( Model, Cmd Msg )
 updateInput string model =
     if (String.length string == 0) then
-        { model | status = Idle, boxItems = [] } ! []
+        { model | status = Idle, boxItems = List.take model.boxLength model.availableItems } ! []
     else
         let
             unselectedItems =
@@ -382,16 +382,31 @@ idleBoxView h model =
     if model.maxItems == 1 then
         editingBoxView h model
     else if List.length model.selectedItems == model.maxItems then
-        span [] []
+        div []
+            [ div [] [ text "Press backspace to edit" ] ]
     else
-        div [ class h.classes.instructionsForBlank ] [ text h.instructionsForBlank ]
+        div []
+            [ editingBoxView h model
+            , div [ class h.classes.instructionsForBlank ] [ text "Type for more options" ]
+            ]
+
+
+noMatches : HtmlOptions -> Model -> Html Msg
+noMatches h model =
+    if List.length model.boxItems == 0 then
+        div [] [ text "No matches" ]
+    else
+        div [] []
 
 
 boxView : HtmlOptions -> Model -> Html Msg
 boxView h model =
     case (Debug.log "DEBUG1" model.status) of
         Editing ->
-            editingBoxView h model
+            div []
+                [ editingBoxView h model
+                , noMatches h model
+                ]
 
         Initial ->
             idleBoxView h model
@@ -427,7 +442,14 @@ view h fallbackCodes model =
                         input [ onBlur Blur, maxlength 0 ] []
 
                 Editing ->
-                    input [ onBlur Blur, onInput Input, class h.classes.inputEditing ] []
+                    let
+                        maxlength' =
+                            if List.length model.boxItems == 0 then
+                                0
+                            else
+                                524288
+                    in
+                        input [ maxlength maxlength', onBlur Blur, onInput Input, class h.classes.inputEditing ] []
 
                 Cleared ->
                     input [ onKeyUp KeyUp, value "", onBlur Blur, onInput Input ] []

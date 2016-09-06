@@ -400,8 +400,11 @@ editingBoxView h model =
 idleBoxView : HtmlOptions -> Model -> Html Msg
 idleBoxView h model =
     let
+        remainingItems =
+            List.length model.availableItems - List.length model.selectedItems
+
         typeForMore =
-            if (List.length model.boxItems) > model.boxLength then
+            if remainingItems > model.boxLength then
                 div [ class h.classes.info ] [ text h.typeForMore ]
             else
                 span [] []

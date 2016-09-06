@@ -15,7 +15,7 @@ module Selectize
 import Task
 import Html exposing (..)
 import Html.Attributes exposing (value, defaultValue, readonly, maxlength, class, classList)
-import Html.Events exposing (onInput, onBlur, onFocus, on)
+import Html.Events exposing (onInput, onBlur, onFocus, onMouseDown, on)
 import Fuzzy
 import String
 import Json.Decode
@@ -104,6 +104,7 @@ type Msg
     = Input String
     | KeyDown Int
     | KeyUp Int
+    | MouseClick Item
     | Blur
     | Focus
 
@@ -164,6 +165,16 @@ updateInput string model =
                     |> List.map snd
         in
             { model | status = Editing, boxItems = boxItems } ! []
+
+
+updateMouse : Item -> Model -> ( Model, Cmd Msg )
+updateMouse item model =
+    { model
+        | status = Cleared
+        , selectedItems = Debug.log "DEBUG1" (model.selectedItems ++ [ item ])
+        , boxPosition = 0
+    }
+        ! []
 
 
 updateKey : Int -> Model -> ( Model, Cmd Msg )
@@ -262,6 +273,9 @@ update msg model =
             else
                 model ! []
 
+        MouseClick item ->
+            updateMouse (Debug.log "DEBUG2" item) model
+
         Blur ->
             { model | status = Blurred, boxPosition = 0 } ! []
 
@@ -297,6 +311,7 @@ boxView h model =
                             [ ( c.boxItem, True )
                             , ( c.boxItemActive, model.boxPosition == pos )
                             ]
+                        , onMouseDown (MouseClick item)
                         ]
                         [ text item.display ]
             in

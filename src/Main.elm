@@ -87,6 +87,7 @@ htmlClasses =
     , boxItemActive = "activeBoxItem"
     , selectBox = "selectBox"
     , instructionsForBlank = "instructions"
+    , inputEditing = "inputEditing"
     }
 
 

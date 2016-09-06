@@ -14,7 +14,6 @@ module Selectize
         , blurred
         )
 
-import Task
 import Html exposing (..)
 import Html.Attributes exposing (value, defaultValue, maxlength, class, classList)
 import Html.Events exposing (onInput, onBlur, onFocus, onMouseDown, on)
@@ -101,16 +100,25 @@ pickItems items codes =
     List.filter (\item -> (List.member item.code codes)) items
 
 
+defaultItems : Int -> Items -> Items -> Items
+defaultItems boxLength availableItems selectedItems =
+    List.take boxLength (diffItems availableItems selectedItems)
+
+
 init : Int -> Int -> List String -> Items -> Model
 init maxItems boxLength selectedCodes availableItems =
-    { maxItems = maxItems
-    , boxLength = boxLength
-    , selectedItems = pickItems availableItems selectedCodes
-    , availableItems = availableItems
-    , boxItems = List.take boxLength availableItems
-    , boxPosition = 0
-    , status = Blurred
-    }
+    let
+        selectedItems =
+            pickItems availableItems selectedCodes
+    in
+        { maxItems = maxItems
+        , boxLength = boxLength
+        , selectedItems = selectedItems
+        , availableItems = availableItems
+        , boxItems = defaultItems boxLength availableItems selectedItems
+        , boxPosition = 0
+        , status = Blurred
+        }
 
 
 
@@ -178,11 +186,16 @@ diffItems a b =
 updateInput : String -> Model -> ( Model, Cmd Msg )
 updateInput string model =
     if (String.length string == 0) then
-        { model | status = Idle, boxItems = List.take model.boxLength model.availableItems } ! []
+        { model
+            | status = Idle
+            , boxItems =
+                defaultItems model.boxLength model.availableItems (Debug.log "DEBUG1" model.selectedItems)
+        }
+            ! []
     else
         let
             unselectedItems =
-                diffItems model.availableItems model.selectedItems
+                diffItems model.availableItems (Debug.log "DEBUG2" model.selectedItems)
 
             boxItems =
                 List.map (score string) unselectedItems
@@ -194,14 +207,22 @@ updateInput string model =
             { model | status = Editing, boxItems = boxItems } ! []
 
 
-updateMouse : Item -> Model -> ( Model, Cmd Msg )
-updateMouse item model =
-    { model
-        | status = Cleared
-        , selectedItems = model.selectedItems ++ [ item ]
-        , boxPosition = 0
-    }
-        ! []
+updateSelectedItem : Item -> Model -> ( Model, Cmd Msg )
+updateSelectedItem item model =
+    let
+        selectedItems =
+            model.selectedItems ++ [ item ]
+
+        boxItems =
+            defaultItems model.boxLength model.availableItems selectedItems
+    in
+        { model
+            | status = Cleared
+            , selectedItems = selectedItems
+            , boxItems = boxItems
+            , boxPosition = 0
+        }
+            ! []
 
 
 updateEnterKey : Model -> ( Model, Cmd Msg )
@@ -215,12 +236,7 @@ updateEnterKey model =
                 model ! []
 
             Just item ->
-                { model
-                    | status = Cleared
-                    , selectedItems = model.selectedItems ++ [ item ]
-                    , boxPosition = 0
-                }
-                    ! []
+                updateSelectedItem item model
 
 
 updateBox : Int -> Model -> ( Model, Cmd Msg )
@@ -242,10 +258,6 @@ updateBox keyCode model =
 
         -- enter
         13 ->
-            updateEnterKey model
-
-        -- tab
-        9 ->
             updateEnterKey model
 
         _ ->
@@ -293,11 +305,6 @@ updateKey keyCode model =
             model ! []
 
 
-dispatch : Msg -> Cmd Msg
-dispatch msg =
-    Task.perform identity identity (Task.succeed msg)
-
-
 update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
     case msg of
@@ -314,7 +321,7 @@ update msg model =
                 model ! []
 
         MouseClick item ->
-            updateMouse item model
+            updateSelectedItem item model
 
         Blur ->
             { model | status = Blurred, boxPosition = 0 } ! []

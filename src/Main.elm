@@ -58,12 +58,6 @@ update msg model =
             let
                 ( selectizeModel, selectizeCmd ) =
                     Selectize.update selectizeMsg model.selectize
-
-                _ =
-                    Debug.log "Focus" (Selectize.focused selectizeMsg)
-
-                _ =
-                    Debug.log "Blur" (Selectize.blurred selectizeMsg)
             in
                 { model | selectize = selectizeModel } ! [ Cmd.map SelectizeMsg selectizeCmd ]
     in

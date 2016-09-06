@@ -216,69 +216,73 @@ updateEnterKey model =
                     ! []
 
 
+updateBox : Int -> Model -> ( Model, Cmd Msg )
+updateBox keyCode model =
+    case keyCode of
+        -- up
+        38 ->
+            { model | boxPosition = (max 0 (model.boxPosition - 1)) } ! []
+
+        -- down
+        40 ->
+            { model
+                | boxPosition =
+                    (min ((List.length model.boxItems) - 1)
+                        (model.boxPosition + 1)
+                    )
+            }
+                ! []
+
+        -- enter
+        13 ->
+            updateEnterKey model
+
+        -- tab
+        9 ->
+            updateEnterKey model
+
+        _ ->
+            model ! []
+
+
+updateBoxInitial : Int -> Model -> ( Model, Cmd Msg )
+updateBoxInitial keyCode originalModel =
+    let
+        ( model, cmd ) =
+            updateBox keyCode originalModel
+    in
+        case keyCode of
+            -- backspace
+            8 ->
+                let
+                    allButLast =
+                        max 0 ((List.length model.selectedItems) - 1)
+
+                    newSelectedItems =
+                        List.take allButLast model.selectedItems
+                in
+                    { model | selectedItems = newSelectedItems } ! [ cmd ]
+
+            _ ->
+                model ! [ cmd ]
+
+
 updateKey : Int -> Model -> ( Model, Cmd Msg )
 updateKey keyCode model =
     case model.status of
         Editing ->
-            case keyCode of
-                -- up
-                38 ->
-                    { model | boxPosition = (max 0 (model.boxPosition - 1)) } ! []
-
-                -- down
-                40 ->
-                    { model
-                        | boxPosition =
-                            (min ((List.length model.boxItems) - 1)
-                                (model.boxPosition + 1)
-                            )
-                    }
-                        ! []
-
-                -- enter
-                13 ->
-                    updateEnterKey model
-
-                -- tab
-                9 ->
-                    updateEnterKey model
-
-                _ ->
-                    model ! []
+            updateBox keyCode model
 
         Initial ->
-            case keyCode of
-                -- backspace
-                8 ->
-                    let
-                        allButLast =
-                            max 0 ((List.length model.selectedItems) - 1)
-
-                        newSelectedItems =
-                            List.take allButLast model.selectedItems
-                    in
-                        { model | selectedItems = newSelectedItems } ! []
-
-                _ ->
-                    model ! []
+            updateBoxInitial keyCode model
 
         Idle ->
-            case keyCode of
-                -- backspace
-                8 ->
-                    let
-                        allButLast =
-                            max 0 ((List.length model.selectedItems) - 1)
+            updateBoxInitial keyCode model
 
-                        newSelectedItems =
-                            List.take allButLast model.selectedItems
-                    in
-                        { model | selectedItems = newSelectedItems } ! []
+        Cleared ->
+            updateBoxInitial keyCode model
 
-                _ ->
-                    model ! []
-
-        _ ->
+        Blurred ->
             model ! []
 
 
@@ -379,9 +383,7 @@ editingBoxView h model =
 
 idleBoxView : HtmlOptions -> Model -> Html Msg
 idleBoxView h model =
-    if model.maxItems == 1 then
-        editingBoxView h model
-    else if List.length model.selectedItems == model.maxItems then
+    if List.length model.selectedItems == model.maxItems then
         div []
             [ div [] [ text "Press backspace to edit" ] ]
     else
@@ -433,13 +435,13 @@ view h fallbackCodes model =
                     if (List.length model.selectedItems) < model.maxItems then
                         input [ onBlur Blur, onInput Input ] []
                     else
-                        input [ onBlur Blur, maxlength 0 ] []
+                        input [ onBlur Blur, onInput Input, maxlength 0 ] []
 
                 Idle ->
                     if (List.length model.selectedItems) < model.maxItems then
                         input [ onBlur Blur, onInput Input ] []
                     else
-                        input [ onBlur Blur, maxlength 0 ] []
+                        input [ onBlur Blur, onInput Input, maxlength 0 ] []
 
                 Editing ->
                     let

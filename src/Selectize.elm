@@ -87,11 +87,16 @@ type alias Model =
     }
 
 
-init : Int -> Int -> List Item -> List Item -> Model
-init maxItems boxLength selectedItems availableItems =
+pickItems : Items -> List String -> Items
+pickItems items codes =
+    List.filter (\item -> (List.member item.code codes)) items
+
+
+init : Int -> Int -> List String -> Items -> Model
+init maxItems boxLength selectedCodes availableItems =
     { maxItems = maxItems
     , boxLength = boxLength
-    , selectedItems = selectedItems
+    , selectedItems = pickItems availableItems selectedCodes
     , availableItems = availableItems
     , boxItems = []
     , boxPosition = 0
@@ -184,7 +189,7 @@ updateMouse : Item -> Model -> ( Model, Cmd Msg )
 updateMouse item model =
     { model
         | status = Cleared
-        , selectedItems = Debug.log "DEBUG1" (model.selectedItems ++ [ item ])
+        , selectedItems = model.selectedItems ++ [ item ]
         , boxPosition = 0
     }
         ! []
@@ -287,7 +292,7 @@ update msg model =
                 model ! []
 
         MouseClick item ->
-            updateMouse (Debug.log "DEBUG2" item) model
+            updateMouse item model
 
         Blur ->
             { model | status = Blurred, boxPosition = 0 } ! []
@@ -305,8 +310,8 @@ itemView h item =
     div [ class h.classes.selectedItem ] [ text item.code ]
 
 
-fallbackItemsView : HtmlOptions -> List Item -> List Item -> Html Msg
-fallbackItemsView h fallbackItems selectedItems =
+fallbackItemsView : HtmlOptions -> List Item -> List Item -> Model -> Html Msg
+fallbackItemsView h fallbackItems selectedItems model =
     let
         classes =
             classList
@@ -324,22 +329,22 @@ fallbackItemsView h fallbackItems selectedItems =
 
 
 itemsView : HtmlOptions -> List Item -> List Item -> Model -> Html Msg
-itemsView h fallbackitems selectedItems model =
+itemsView h fallbackItems selectedItems model =
     case model.status of
         Editing ->
-            fallbackItemsView h [] selectedItems
+            fallbackItemsView h [] selectedItems model
 
         Initial ->
-            fallbackItemsView h fallbackitems selectedItems
+            fallbackItemsView h fallbackItems selectedItems model
 
         Idle ->
-            fallbackItemsView h fallbackitems selectedItems
+            fallbackItemsView h fallbackItems selectedItems model
 
         Cleared ->
-            fallbackItemsView h fallbackitems selectedItems
+            fallbackItemsView h fallbackItems selectedItems model
 
         Blurred ->
-            fallbackItemsView h fallbackitems selectedItems
+            fallbackItemsView h fallbackItems selectedItems model
 
 
 boxView : HtmlOptions -> Model -> Html Msg
@@ -372,9 +377,12 @@ boxView h model =
             span [] []
 
 
-view : HtmlOptions -> List Item -> Model -> Html Msg
-view h fallbackItems model =
+view : HtmlOptions -> List String -> Model -> Html Msg
+view h fallbackCodes model =
     let
+        fallbackItems =
+            pickItems model.availableItems fallbackCodes
+
         editInput =
             case model.status of
                 Initial ->

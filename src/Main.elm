@@ -29,24 +29,16 @@ type alias Model =
     }
 
 
-selectedItems : List Selectize.Item
-selectedItems =
-    [ { code = "UZS"
-      , display = "Uzbekistan Sum"
-      , searchWords = []
-      }
-    , { code = "VUV"
-      , display = "Vatu"
-      , searchWords = []
-      }
-    ]
+selectedCodes : List String
+selectedCodes =
+    [ "UZS", "VUV" ]
 
 
 init : ( Model, Cmd Msg )
 init =
     let
         selectizeModel =
-            Selectize.init 3 5 selectedItems currencies
+            Selectize.init 3 5 selectedCodes currencies
     in
         { selectize = selectizeModel } ! []
 
@@ -105,27 +97,15 @@ htmlOptions =
     }
 
 
-fallbackItems : List Selectize.Item
-fallbackItems =
-    [ { code = "INR"
-      , display = "Indian Rupee"
-      , searchWords = []
-      }
-    , { code = "BTN"
-      , display = "Ngultrum"
-      , searchWords = []
-      }
-    , { code = "BOB"
-      , display = "Boliviano"
-      , searchWords = []
-      }
-    ]
+fallbackCodes : List String
+fallbackCodes =
+    [ "INR", "BTN", "BOB" ]
 
 
 view : Model -> Html Msg
 view model =
     div []
-        [ Html.App.map SelectizeMsg (Selectize.view htmlOptions fallbackItems model.selectize)
+        [ Html.App.map SelectizeMsg (Selectize.view htmlOptions fallbackCodes model.selectize)
         ]
 
 

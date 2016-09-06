@@ -10,6 +10,8 @@ module Selectize
         , Item
         , HtmlOptions
         , HtmlClasses
+        , focused
+        , blurred
         )
 
 import Task
@@ -107,6 +109,16 @@ type Msg
     | MouseClick Item
     | Blur
     | Focus
+
+
+focused : Msg -> Bool
+focused msg =
+    msg == Focus
+
+
+blurred : Msg -> Bool
+blurred msg =
+    msg == Blur
 
 
 selectedItemCodes : Model -> List String

@@ -282,8 +282,15 @@ updateBoxInitial keyCode originalModel =
 
                     newSelectedItems =
                         List.take allButLast model.selectedItems
+
+                    boxItems =
+                        defaultItems model.boxLength model.availableItems newSelectedItems
                 in
-                    { model | selectedItems = newSelectedItems } ! [ cmd ]
+                    { model
+                        | selectedItems = newSelectedItems
+                        , boxItems = boxItems
+                    }
+                        ! [ cmd ]
 
             _ ->
                 model ! [ cmd ]

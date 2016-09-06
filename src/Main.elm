@@ -31,14 +31,19 @@ type alias Model =
 
 selectedCodes : List String
 selectedCodes =
-    [ "UZS" ]
+    []
+
+
+availableItems : List Selectize.Item
+availableItems =
+    List.take 1 currencies
 
 
 init : ( Model, Cmd Msg )
 init =
     let
         selectizeModel =
-            Selectize.init 2 5 selectedCodes currencies
+            Selectize.init 1 5 selectedCodes availableItems
     in
         { selectize = selectizeModel } ! []
 

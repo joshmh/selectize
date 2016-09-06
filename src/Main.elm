@@ -73,6 +73,7 @@ htmlClasses =
     , boxItems = "boxItems"
     , boxItem = "boxItem"
     , boxItemActive = "activeBoxItem"
+    , selectBox = "selectBox"
     , instructionsForBlank = "instructions"
     }
 

@@ -4,6 +4,7 @@ module Selectize
         , update
         , view
         , selectizeItem
+        , selectedItemCodes
         , Model
         , Msg
         , Item
@@ -31,6 +32,7 @@ type alias HtmlOptions =
 
 type alias HtmlClasses =
     { container : String
+    , selectBox : String
     , selectedItems : String
     , selectedItem : String
     , boxItems : String
@@ -103,6 +105,11 @@ type Msg
     | KeyUp Int
     | Blur
     | Focus
+
+
+selectedItemCodes : Model -> List String
+selectedItemCodes model =
+    List.map .code model.selectedItems
 
 
 clean : String -> String
@@ -309,7 +316,7 @@ view h model =
                     input [ readonly True, onFocus Focus ] []
     in
         div [ class h.classes.container ]
-            [ div [ onKeyDown KeyDown ]
+            [ div [ class h.classes.selectBox, onKeyDown KeyDown ]
                 [ div [] [ itemsView h model.selectedItems ]
                 , editInput
                 ]

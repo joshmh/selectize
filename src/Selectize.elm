@@ -57,6 +57,7 @@ type Status
     = Initial
     | Editing
     | Cleared
+    | Idle
     | Blurred
 
 
@@ -149,7 +150,7 @@ diffItems a b =
 updateInput : String -> Model -> ( Model, Cmd Msg )
 updateInput string model =
     if (String.length string == 0) then
-        { model | status = Initial, boxItems = [] } ! []
+        { model | status = Idle, boxItems = [] } ! []
     else
         let
             unselectedItems =
@@ -221,6 +222,22 @@ updateKey keyCode model =
                 _ ->
                     model ! []
 
+        Idle ->
+            case keyCode of
+                -- backspace
+                8 ->
+                    let
+                        allButLast =
+                            max 0 ((List.length model.selectedItems) - 1)
+
+                        newSelectedItems =
+                            List.take allButLast model.selectedItems
+                    in
+                        { model | selectedItems = newSelectedItems } ! []
+
+                _ ->
+                    model ! []
+
         _ ->
             model ! []
 
@@ -241,7 +258,7 @@ update msg model =
 
         KeyUp code ->
             if model.status == Cleared && code == 13 then
-                { model | status = Initial } ! []
+                { model | status = Idle } ! []
             else
                 model ! []
 
@@ -301,6 +318,12 @@ view h model =
         editInput =
             case model.status of
                 Initial ->
+                    if (List.length model.selectedItems) < model.maxItems then
+                        input [ onBlur Blur, onInput Input ] []
+                    else
+                        input [ readonly True ] []
+
+                Idle ->
                     if (List.length model.selectedItems) < model.maxItems then
                         input [ onBlur Blur, onInput Input ] []
                     else

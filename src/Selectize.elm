@@ -241,27 +241,30 @@ updateEnterKey model =
 
 updateBox : Int -> Model -> ( Model, Cmd Msg )
 updateBox keyCode model =
-    case keyCode of
-        -- up
-        38 ->
-            { model | boxPosition = (max 0 (model.boxPosition - 1)) } ! []
+    if List.length model.selectedItems == model.maxItems then
+        model ! []
+    else
+        case keyCode of
+            -- up
+            38 ->
+                { model | boxPosition = (max 0 (model.boxPosition - 1)) } ! []
 
-        -- down
-        40 ->
-            { model
-                | boxPosition =
-                    (min ((List.length model.boxItems) - 1)
-                        (model.boxPosition + 1)
-                    )
-            }
-                ! []
+            -- down
+            40 ->
+                { model
+                    | boxPosition =
+                        (min ((List.length model.boxItems) - 1)
+                            (model.boxPosition + 1)
+                        )
+                }
+                    ! []
 
-        -- enter
-        13 ->
-            updateEnterKey model
+            -- enter
+            13 ->
+                updateEnterKey model
 
-        _ ->
-            model ! []
+            _ ->
+                model ! []
 
 
 updateBoxInitial : Int -> Model -> ( Model, Cmd Msg )

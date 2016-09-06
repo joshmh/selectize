@@ -15,11 +15,13 @@ module Selectize
         )
 
 import Html exposing (..)
-import Html.Attributes exposing (value, defaultValue, maxlength, class, classList)
-import Html.Events exposing (onInput, onBlur, onFocus, onMouseDown, on)
+import Html.Attributes exposing (value, defaultValue, maxlength, class, classList, id)
+import Html.Events exposing (onInput, onBlur, onFocus, onMouseDown, onClick, on)
 import Fuzzy
 import String
 import Json.Decode
+import Task
+import Dom
 
 
 -- MODEL
@@ -132,6 +134,8 @@ type Msg
     | MouseClick Item
     | Blur
     | Focus
+    | RequestFocus
+    | NOOP
 
 
 focused : Msg -> Bool
@@ -342,6 +346,15 @@ update msg model =
             }
                 ! []
 
+        RequestFocus ->
+            if model.status == Blurred then
+                model ! [ Task.perform (\_ -> NOOP) (\_ -> NOOP) (Dom.focus "this-id") ]
+            else
+                model ! []
+
+        NOOP ->
+            model ! []
+
 
 
 -- VIEW
@@ -509,9 +522,9 @@ view h fallbackCodes model =
                     input [ onKeyUp KeyUp, value "", onBlur Blur, onInput Input ] []
 
                 Blurred ->
-                    input [ maxlength 0, onFocus Focus, value "" ] []
+                    input [ id "this-id", maxlength 0, onFocus Focus, value "" ] []
     in
-        div [ class h.classes.container ]
+        div [ class h.classes.container, onClick RequestFocus ]
             [ div
                 [ classList
                     [ ( h.classes.singleItemContainer, model.maxItems == 1 )

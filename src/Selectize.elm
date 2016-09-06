@@ -36,6 +36,7 @@ type alias HtmlClasses =
     { container : String
     , selectBox : String
     , selectedItems : String
+    , fallbackItems : String
     , selectedItem : String
     , boxItems : String
     , boxItem : String
@@ -304,9 +305,41 @@ itemView h item =
     div [ class h.classes.selectedItem ] [ text item.code ]
 
 
-itemsView : HtmlOptions -> List Item -> Html Msg
-itemsView h items =
-    div [ class h.classes.selectedItems ] (List.map (itemView h) items)
+fallbackItemsView : HtmlOptions -> List Item -> List Item -> Html Msg
+fallbackItemsView h fallbackItems selectedItems =
+    let
+        classes =
+            classList
+                [ ( h.classes.selectedItems, True )
+                , ( h.classes.fallbackItems, List.length selectedItems == 0 )
+                ]
+
+        items =
+            if List.length selectedItems == 0 then
+                fallbackItems
+            else
+                selectedItems
+    in
+        div [ classes ] (List.map (itemView h) items)
+
+
+itemsView : HtmlOptions -> List Item -> List Item -> Model -> Html Msg
+itemsView h fallbackitems selectedItems model =
+    case model.status of
+        Editing ->
+            fallbackItemsView h [] selectedItems
+
+        Initial ->
+            fallbackItemsView h fallbackitems selectedItems
+
+        Idle ->
+            fallbackItemsView h fallbackitems selectedItems
+
+        Cleared ->
+            fallbackItemsView h fallbackitems selectedItems
+
+        Blurred ->
+            fallbackItemsView h fallbackitems selectedItems
 
 
 boxView : HtmlOptions -> Model -> Html Msg
@@ -339,8 +372,8 @@ boxView h model =
             span [] []
 
 
-view : HtmlOptions -> Model -> Html Msg
-view h model =
+view : HtmlOptions -> List Item -> Model -> Html Msg
+view h fallbackItems model =
     let
         editInput =
             case model.status of
@@ -367,7 +400,7 @@ view h model =
     in
         div [ class h.classes.container ]
             [ div [ class h.classes.selectBox, onKeyDown KeyDown ]
-                [ div [] [ itemsView h model.selectedItems ]
+                [ div [] [ itemsView h fallbackItems model.selectedItems model ]
                 , editInput
                 ]
             , boxView h model

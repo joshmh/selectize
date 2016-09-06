@@ -88,6 +88,7 @@ htmlClasses : Selectize.HtmlClasses
 htmlClasses =
     { container = "container"
     , selectedItems = "selectedItems"
+    , fallbackItems = "fallbackItems"
     , selectedItem = "selectedItem"
     , boxItems = "boxItems"
     , boxItem = "boxItem"
@@ -104,10 +105,27 @@ htmlOptions =
     }
 
 
+fallbackItems : List Selectize.Item
+fallbackItems =
+    [ { code = "INR"
+      , display = "Indian Rupee"
+      , searchWords = []
+      }
+    , { code = "BTN"
+      , display = "Ngultrum"
+      , searchWords = []
+      }
+    , { code = "BOB"
+      , display = "Boliviano"
+      , searchWords = []
+      }
+    ]
+
+
 view : Model -> Html Msg
 view model =
     div []
-        [ Html.App.map SelectizeMsg (Selectize.view htmlOptions model.selectize)
+        [ Html.App.map SelectizeMsg (Selectize.view htmlOptions fallbackItems model.selectize)
         ]
 
 

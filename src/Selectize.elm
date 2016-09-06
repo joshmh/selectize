@@ -327,10 +327,20 @@ update msg model =
             updateSelectedItem item model
 
         Blur ->
-            { model | status = Blurred, boxPosition = 0 } ! []
+            { model
+                | status = Blurred
+                , boxPosition = 0
+                , boxItems = defaultItems model.boxLength model.availableItems model.selectedItems
+            }
+                ! []
 
         Focus ->
-            { model | status = Initial, boxPosition = 0 } ! []
+            { model
+                | status = Initial
+                , boxPosition = 0
+                , boxItems = defaultItems model.boxLength model.availableItems model.selectedItems
+            }
+                ! []
 
 
 

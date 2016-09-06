@@ -31,14 +31,14 @@ type alias Model =
 
 selectedCodes : List String
 selectedCodes =
-    [ "UZS", "VUV" ]
+    [ "UZS" ]
 
 
 init : ( Model, Cmd Msg )
 init =
     let
         selectizeModel =
-            Selectize.init 3 5 selectedCodes currencies
+            Selectize.init 1 5 selectedCodes currencies
     in
         { selectize = selectizeModel } ! []
 
@@ -79,6 +79,7 @@ update msg model =
 htmlClasses : Selectize.HtmlClasses
 htmlClasses =
     { container = "container"
+    , singleItemContainer = "singleItemContainer"
     , selectedItems = "selectedItems"
     , fallbackItems = "fallbackItems"
     , selectedItem = "selectedItem"

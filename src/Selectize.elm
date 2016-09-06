@@ -16,7 +16,7 @@ module Selectize
 
 import Task
 import Html exposing (..)
-import Html.Attributes exposing (value, defaultValue, readonly, maxlength, class, classList)
+import Html.Attributes exposing (value, defaultValue, maxlength, class, classList)
 import Html.Events exposing (onInput, onBlur, onFocus, onMouseDown, on)
 import Fuzzy
 import String
@@ -34,6 +34,7 @@ type alias HtmlOptions =
 
 type alias HtmlClasses =
     { container : String
+    , singleItemContainer : String
     , selectBox : String
     , selectedItems : String
     , fallbackItems : String
@@ -357,33 +358,51 @@ itemsView h fallbackItems selectedItems model =
             fallbackItemsView h fallbackItems selectedItems model
 
 
+editingBoxView : HtmlOptions -> Model -> Html Msg
+editingBoxView h model =
+    let
+        c =
+            h.classes
+
+        boxItemHtml pos item =
+            div
+                [ classList
+                    [ ( c.boxItem, True )
+                    , ( c.boxItemActive, model.boxPosition == pos )
+                    ]
+                , onMouseDown (MouseClick item)
+                ]
+                [ text item.display ]
+    in
+        div [ class c.boxItems ] (List.indexedMap boxItemHtml model.boxItems)
+
+
+idleBoxView : HtmlOptions -> Model -> Html Msg
+idleBoxView h model =
+    if model.maxItems == 1 then
+        editingBoxView h model
+    else if List.length model.selectedItems == model.maxItems then
+        span [] []
+    else
+        div [ class h.classes.instructionsForBlank ] [ text h.instructionsForBlank ]
+
+
 boxView : HtmlOptions -> Model -> Html Msg
 boxView h model =
-    case model.status of
+    case (Debug.log "DEBUG1" model.status) of
         Editing ->
-            let
-                c =
-                    h.classes
-
-                boxItemHtml pos item =
-                    div
-                        [ classList
-                            [ ( c.boxItem, True )
-                            , ( c.boxItemActive, model.boxPosition == pos )
-                            ]
-                        , onMouseDown (MouseClick item)
-                        ]
-                        [ text item.display ]
-            in
-                div [ class c.boxItems ] (List.indexedMap boxItemHtml model.boxItems)
+            editingBoxView h model
 
         Initial ->
-            if List.length model.selectedItems == model.maxItems then
-                span [] []
-            else
-                div [ class h.classes.instructionsForBlank ] [ text h.instructionsForBlank ]
+            idleBoxView h model
 
-        _ ->
+        Idle ->
+            idleBoxView h model
+
+        Cleared ->
+            idleBoxView h model
+
+        Blurred ->
             span [] []
 
 
@@ -416,7 +435,12 @@ view h fallbackCodes model =
                 Blurred ->
                     input [ maxlength 0, onFocus Focus, value "" ] []
     in
-        div [ class h.classes.container ]
+        div
+            [ classList
+                [ ( h.classes.container, True )
+                , ( h.classes.singleItemContainer, model.maxItems == 1 )
+                ]
+            ]
             [ div [ class h.classes.selectBox, onKeyDown KeyDown ]
                 [ div [] [ itemsView h fallbackItems model.selectedItems model ]
                 , editInput

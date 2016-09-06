@@ -83,6 +83,7 @@ htmlClasses =
     , multiItemContainer = "multiItemContainer"
     , selectedItems = "selectedItems"
     , fallbackItems = "fallbackItems"
+    , fallbackItem = "fallbackItem"
     , selectedItem = "selectedItem"
     , boxContainer = "boxContainer"
     , boxItems = "boxItems"

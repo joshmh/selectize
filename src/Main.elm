@@ -29,11 +29,24 @@ type alias Model =
     }
 
 
+selectedItems : List Selectize.Item
+selectedItems =
+    [ { code = "UZS"
+      , display = "Uzbekistan Sum"
+      , searchWords = []
+      }
+    , { code = "VUV"
+      , display = "Vatu"
+      , searchWords = []
+      }
+    ]
+
+
 init : ( Model, Cmd Msg )
 init =
     let
         selectizeModel =
-            Selectize.init 3 5 [] currencies
+            Selectize.init 3 5 selectedItems currencies
     in
         { selectize = selectizeModel } ! []
 

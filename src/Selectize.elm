@@ -336,7 +336,7 @@ view h model =
                     input [ onKeyUp KeyUp, value "", onBlur Blur, onInput Input ] []
 
                 Blurred ->
-                    input [ readonly True, onFocus Focus ] []
+                    input [ readonly True, onFocus Focus, value "" ] []
     in
         div [ class h.classes.container ]
             [ div [ class h.classes.selectBox, onKeyDown KeyDown ]

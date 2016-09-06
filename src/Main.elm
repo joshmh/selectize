@@ -80,6 +80,7 @@ htmlClasses : Selectize.HtmlClasses
 htmlClasses =
     { container = "container"
     , singleItemContainer = "singleItemContainer"
+    , multiItemContainer = "multiItemContainer"
     , selectedItems = "selectedItems"
     , fallbackItems = "fallbackItems"
     , selectedItem = "selectedItem"

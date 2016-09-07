@@ -4,7 +4,7 @@ module Selectize
         , update
         , view
         , selectizeItem
-        , selectedItemCodes
+        , selectedIds
         , Model
         , Msg
         , Item
@@ -17,6 +17,7 @@ module Selectize
 import Html exposing (..)
 import Html.Attributes exposing (value, defaultValue, maxlength, class, classList, id)
 import Html.Events exposing (onInput, onBlur, onFocus, onMouseDown, onClick, on)
+import Html.App
 import Fuzzy
 import String
 import Json.Decode
@@ -99,9 +100,9 @@ type alias Model idType msg =
     }
 
 
-pickItems : Items idType msg -> List String -> Items idType msg
-pickItems items codes =
-    List.filter (\item -> (List.member item.code codes)) items
+pickItems : Items idType msg -> List idType -> Items idType msg
+pickItems items ids =
+    List.filter (\item -> (List.member item.id ids)) items
 
 
 defaultItems : Int -> Items idType msg -> Items idType msg -> Items idType msg
@@ -109,11 +110,11 @@ defaultItems boxLength availableItems selectedItems =
     List.take boxLength (diffItems availableItems selectedItems)
 
 
-init : Int -> Int -> List String -> Items idType msg -> Model idType msg
-init maxItems boxLength selectedCodes availableItems =
+init : Int -> Int -> List idType -> Items idType msg -> Model idType msg
+init maxItems boxLength selectedIds availableItems =
     let
         selectedItems =
-            pickItems availableItems (List.take maxItems selectedCodes)
+            pickItems availableItems (List.take maxItems selectedIds)
     in
         { maxItems = maxItems
         , boxLength = boxLength
@@ -129,16 +130,17 @@ init maxItems boxLength selectedCodes availableItems =
 -- UPDATE
 
 
-type Msg idType msg idType msg
+type Msg idType msg
     = Input String
     | KeyDown Int
     | KeyUp Int
     | MouseClick (Item idType msg)
     | Blur
     | Focus
+    | ParentMsg msg
 
 
-focused : Msg -> Bool
+focused : Msg idType msg -> Bool
 focused msg =
     msg == Focus
 
@@ -148,9 +150,9 @@ blurred msg =
     msg == Blur
 
 
-selectedItemCodes : Model idType msg -> List String
-selectedItemCodes model =
-    List.map .code model.selectedItems
+selectedIds : Model idType msg -> List idType
+selectedIds model =
+    List.map .id model.selectedItems
 
 
 clean : String -> String
@@ -165,27 +167,15 @@ score needle hay =
         cleanNeedle =
             clean needle
 
-        codeScore =
-            Fuzzy.match [] [] cleanNeedle (clean hay.code)
-
-        majorScore =
-            Fuzzy.match [] [ " " ] cleanNeedle (clean hay.majorOptionDisplay)
-
-        maybeMinorScore =
-            Maybe.map
-                (\minorOptionDisplay ->
-                    (Fuzzy.match [] [ " " ] cleanNeedle (clean minorOptionDisplay))
-                )
-                hay.minorOptionDisplay
+        match keyword =
+            Fuzzy.match [] [] cleanNeedle keyword
+                |> .score
 
         score =
-            case maybeMinorScore of
-                Nothing ->
-                    min codeScore.score majorScore.score
-
-                Just minorScore ->
-                    min codeScore.score majorScore.score
-                        |> min minorScore.score
+            List.map match hay.searchWords
+                |> List.minimum
+                |> Maybe.withDefault
+                    10000
     in
         ( score, hay )
 
@@ -194,7 +184,7 @@ diffItems : Items idType msg -> Items idType msg -> Items idType msg
 diffItems a b =
     let
         isEqual itemA itemB =
-            itemA.code == itemB.code
+            itemA.id == itemB.id
 
         notInB b item =
             (List.any (isEqual item) b)
@@ -203,7 +193,7 @@ diffItems a b =
         List.filter (notInB b) a
 
 
-updateInput : String -> Model idType msg -> ( Model idType msg, Cmd Msg )
+updateInput : String -> Model idType msg -> ( Model idType msg, Cmd (Msg idType msg) )
 updateInput string model =
     if (String.length string == 0) then
         { model
@@ -227,7 +217,7 @@ updateInput string model =
             { model | status = Editing, boxItems = boxItems } ! []
 
 
-updateSelectedItem : Item idType msg -> Model idType msg -> ( Model idType msg, Cmd Msg )
+updateSelectedItem : Item idType msg -> Model idType msg -> ( Model idType msg, Cmd (Msg idType msg) )
 updateSelectedItem item model =
     let
         selectedItems =
@@ -245,7 +235,7 @@ updateSelectedItem item model =
             ! []
 
 
-updateEnterKey : Model idType msg -> ( Model idType msg, Cmd Msg )
+updateEnterKey : Model idType msg -> ( Model idType msg, Cmd (Msg idType msg) )
 updateEnterKey model =
     let
         maybeItem =
@@ -259,7 +249,7 @@ updateEnterKey model =
                 updateSelectedItem item model
 
 
-updateBox : Int -> Model idType msg -> ( Model idType msg, Cmd Msg )
+updateBox : Int -> Model idType msg -> ( Model idType msg, Cmd (Msg idType msg) )
 updateBox keyCode model =
     if List.length model.selectedItems == model.maxItems then
         model ! []
@@ -287,7 +277,7 @@ updateBox keyCode model =
                 model ! []
 
 
-updateBoxInitial : Int -> Model idType msg -> ( Model idType msg, Cmd Msg )
+updateBoxInitial : Int -> Model idType msg -> ( Model idType msg, Cmd (Msg idType msg) )
 updateBoxInitial keyCode originalModel =
     let
         ( model, cmd ) =
@@ -316,7 +306,7 @@ updateBoxInitial keyCode originalModel =
                 model ! [ cmd ]
 
 
-updateKey : Int -> Model idType msg -> ( Model idType msg, Cmd Msg )
+updateKey : Int -> Model idType msg -> ( Model idType msg, Cmd (Msg idType msg) )
 updateKey keyCode model =
     case model.status of
         Editing ->
@@ -335,7 +325,7 @@ updateKey keyCode model =
             model ! []
 
 
-update : Msg -> Model idType msg -> ( Model idType msg, Cmd Msg )
+update : Msg idType msg -> Model idType msg -> ( Model idType msg, Cmd (Msg idType msg) )
 update msg model =
     case msg of
         Input string ->
@@ -369,12 +359,15 @@ update msg model =
             }
                 ! []
 
+        ParentMsg msg ->
+            model ! []
+
 
 
 -- VIEW
 
 
-itemView : HtmlOptions -> Bool -> Item idType msg -> Html Msg
+itemView : HtmlOptions -> Bool -> Item idType msg -> Html (Msg idType msg)
 itemView h isFallback item =
     span
         [ classList
@@ -382,10 +375,10 @@ itemView h isFallback item =
             , ( h.classes.fallbackItem, isFallback )
             ]
         ]
-        [ text item.selectedDisplay ]
+        [ Html.App.map ParentMsg item.selectedDisplay ]
 
 
-fallbackItemsView : HtmlOptions -> Items idType msg -> Items idType msg -> Model idType msg -> Html Msg
+fallbackItemsView : HtmlOptions -> Items idType msg -> Items idType msg -> Model idType msg -> Html (Msg idType msg)
 fallbackItemsView h fallbackItems selectedItems model =
     let
         classes =
@@ -406,7 +399,7 @@ fallbackItemsView h fallbackItems selectedItems model =
         span [ classes ] (List.map (itemView h isFallback) items)
 
 
-itemsView : HtmlOptions -> Items idType msg -> Items idType msg -> Model idType msg -> Html Msg
+itemsView : HtmlOptions -> Items idType msg -> Items idType msg -> Model idType msg -> Html (Msg idType msg)
 itemsView h fallbackItems selectedItems model =
     case model.status of
         Editing ->
@@ -425,38 +418,27 @@ itemsView h fallbackItems selectedItems model =
             fallbackItemsView h fallbackItems selectedItems model
 
 
-editingBoxView : HtmlOptions -> Model idType msg -> Html Msg
+editingBoxView : HtmlOptions -> Model idType msg -> Html (Msg idType msg)
 editingBoxView h model =
     let
         c =
             h.classes
 
         boxItemHtml pos item =
-            let
-                boxItem =
-                    case item.minorOptionDisplay of
-                        Nothing ->
-                            [ span [ class c.majorOptionDisplay ] [ text item.majorOptionDisplay ]
-                            ]
-
-                        Just minorOptionDisplay ->
-                            [ span [ class c.majorOptionDisplay ] [ text item.majorOptionDisplay ]
-                            , span [ class c.minorOptionDisplay ] [ text minorOptionDisplay ]
-                            ]
-            in
-                div
-                    [ classList
-                        [ ( c.boxItem, True )
-                        , ( c.boxItemActive, model.boxPosition == pos )
-                        ]
-                    , onMouseDown (MouseClick item)
+            div
+                [ classList
+                    [ ( c.boxItem, True )
+                    , ( c.boxItemActive, model.boxPosition == pos )
                     ]
-                    boxItem
+                , onMouseDown (MouseClick item)
+                ]
+                [ Html.App.map ParentMsg item.optionDisplay
+                ]
     in
         div [ class c.boxItems ] (List.indexedMap boxItemHtml model.boxItems)
 
 
-idleBoxView : HtmlOptions -> Model idType msg -> Html Msg
+idleBoxView : HtmlOptions -> Model idType msg -> Html (Msg idType msg)
 idleBoxView h model =
     let
         remainingItems =
@@ -478,7 +460,7 @@ idleBoxView h model =
                 ]
 
 
-noMatches : HtmlOptions -> Model idType msg -> Html Msg
+noMatches : HtmlOptions -> Model idType msg -> Html (Msg idType msg)
 noMatches h model =
     if List.length model.boxItems == 0 then
         div
@@ -492,7 +474,7 @@ noMatches h model =
         span [] []
 
 
-boxView : HtmlOptions -> Model idType msg -> Html Msg
+boxView : HtmlOptions -> Model idType msg -> Html (Msg idType msg)
 boxView h model =
     case model.status of
         Editing ->
@@ -514,15 +496,15 @@ boxView h model =
             span [] []
 
 
-view : HtmlOptions -> List String -> Model idType msg -> Html Msg
-view h fallbackCodes model =
+view : HtmlOptions -> List idType -> Model idType msg -> Html (Msg idType msg)
+view h fallbackIds model =
     if List.length model.availableItems == 0 then
         div [ class h.classes.container ]
             [ div [ class h.classes.noOptions ] [ text h.noOptions ] ]
     else
         let
             fallbackItems =
-                pickItems model.availableItems fallbackCodes
+                pickItems model.availableItems fallbackIds
 
             editInput =
                 case model.status of
@@ -552,7 +534,7 @@ view h fallbackCodes model =
                         input [ onKeyUp KeyUp, value "", onBlur Blur, onInput Input ] []
 
                     Blurred ->
-                        input [ id "this-id", maxlength 0, onFocus Focus, value "" ] []
+                        input [ maxlength 0, onFocus Focus, value "" ] []
         in
             div [ class h.classes.container ]
                 [ label

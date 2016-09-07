@@ -451,8 +451,7 @@ idleBoxView h model =
                 span [] []
     in
         if List.length model.selectedItems == model.maxItems then
-            div [ class h.classes.boxContainer ]
-                [ div [ class h.classes.info ] [ text h.atMaxLength ] ]
+            span [] []
         else
             div [ class h.classes.boxContainer ]
                 [ editingBoxView h model

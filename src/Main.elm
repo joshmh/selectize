@@ -26,20 +26,20 @@ type CurrencyRec
 
 
 type alias Model =
-    { selectize : Selectize.Model String Msg
+    { selectize : SelectizeModel
     }
 
 
 type alias SelectizeModel =
-    Selectize.Model String Msg
+    Selectize.Model String
 
 
 type alias SelectizeItem =
-    Selectize.Item String Msg
+    Selectize.Item String
 
 
 type alias SelectizeMsgType =
-    Selectize.Msg String Msg
+    Selectize.Msg String
 
 
 selectedCodes : List String
@@ -51,8 +51,8 @@ mapCurrency : { a | code : String, display : String } -> SelectizeItem
 mapCurrency rawCurrency =
     Selectize.selectizeItem
         rawCurrency.code
-        (text rawCurrency.code)
-        (text rawCurrency.display)
+        rawCurrency.code
+        rawCurrency.display
         (rawCurrency.code :: (String.split " " rawCurrency.display))
 
 

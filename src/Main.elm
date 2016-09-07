@@ -31,19 +31,19 @@ type alias Model =
 
 selectedCodes : List String
 selectedCodes =
-    []
+    [ "USD", "ILS", "CAD" ]
 
 
 availableItems : List Selectize.Item
 availableItems =
-    List.take 1 currencies
+    currencies
 
 
 init : ( Model, Cmd Msg )
 init =
     let
         selectizeModel =
-            Selectize.init 1 5 selectedCodes availableItems
+            Selectize.init 2 5 selectedCodes availableItems
     in
         { selectize = selectizeModel } ! []
 
@@ -78,6 +78,7 @@ update msg model =
 htmlClasses : Selectize.HtmlClasses
 htmlClasses =
     { container = "container"
+    , noOptions = "noOptions"
     , singleItemContainer = "singleItemContainer"
     , multiItemContainer = "multiItemContainer"
     , selectedItems = "selectedItems"
@@ -101,6 +102,7 @@ htmlOptions =
     , noMatches = "No matches"
     , atMaxLength = "Type backspace to edit"
     , typeForMore = "Type for more options"
+    , noOptions = "No options"
     , classes = htmlClasses
     }
 

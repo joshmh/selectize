@@ -30,12 +30,14 @@ type alias HtmlOptions =
     , noMatches : String
     , typeForMore : String
     , atMaxLength : String
+    , noOptions : String
     , classes : HtmlClasses
     }
 
 
 type alias HtmlClasses =
     { container : String
+    , noOptions : String
     , singleItemContainer : String
     , multiItemContainer : String
     , selectBox : String
@@ -47,6 +49,8 @@ type alias HtmlClasses =
     , boxItems : String
     , boxItem : String
     , boxItemActive : String
+    , majorOptionDisplay : String
+    , minorOptionDisplay : String
     , info : String
     , infoNoMatches : String
     , inputEditing : String
@@ -59,7 +63,9 @@ type alias H =
 
 type alias Item =
     { code : String
-    , display : String
+    , selectedDisplay : String
+    , majorOptionDisplay : String
+    , minorOptionDisplay : Maybe String
     , searchWords : List String
     }
 
@@ -75,7 +81,9 @@ type Status
 selectizeItem : String -> String -> List String -> Item
 selectizeItem code display searchWords =
     { code = code
-    , display = display
+    , selectedDisplay = code
+    , majorOptionDisplay = display
+    , minorOptionDisplay = Nothing
     , searchWords = searchWords
     }
 
@@ -109,7 +117,7 @@ init : Int -> Int -> List String -> Items -> Model
 init maxItems boxLength selectedCodes availableItems =
     let
         selectedItems =
-            pickItems availableItems selectedCodes
+            pickItems availableItems (List.take maxItems selectedCodes)
     in
         { maxItems = maxItems
         , boxLength = boxLength
@@ -164,10 +172,26 @@ score needle hay =
         codeScore =
             Fuzzy.match [] [] cleanNeedle (clean hay.code)
 
-        displayScore =
-            Fuzzy.match [] [ " " ] cleanNeedle (clean hay.display)
+        majorScore =
+            Fuzzy.match [] [ " " ] cleanNeedle (clean hay.majorOptionDisplay)
+
+        maybeMinorScore =
+            Maybe.map
+                (\minorOptionDisplay ->
+                    (Fuzzy.match [] [ " " ] cleanNeedle (clean minorOptionDisplay))
+                )
+                hay.minorOptionDisplay
+
+        score =
+            case maybeMinorScore of
+                Nothing ->
+                    min codeScore.score majorScore.score
+
+                Just minorScore ->
+                    min codeScore.score majorScore.score
+                        |> min minorScore.score
     in
-        ( min codeScore.score displayScore.score, hay )
+        ( score, hay )
 
 
 diffItems : Items -> Items -> Items
@@ -362,7 +386,7 @@ itemView h isFallback item =
             , ( h.classes.fallbackItem, isFallback )
             ]
         ]
-        [ text item.code ]
+        [ text item.selectedDisplay ]
 
 
 fallbackItemsView : HtmlOptions -> List Item -> List Item -> Model -> Html Msg
@@ -412,14 +436,26 @@ editingBoxView h model =
             h.classes
 
         boxItemHtml pos item =
-            div
-                [ classList
-                    [ ( c.boxItem, True )
-                    , ( c.boxItemActive, model.boxPosition == pos )
+            let
+                boxItem =
+                    case item.minorOptionDisplay of
+                        Nothing ->
+                            [ span [ class c.majorOptionDisplay ] [ text item.majorOptionDisplay ]
+                            ]
+
+                        Just minorOptionDisplay ->
+                            [ span [ class c.majorOptionDisplay ] [ text item.majorOptionDisplay ]
+                            , span [ class c.minorOptionDisplay ] [ text minorOptionDisplay ]
+                            ]
+            in
+                div
+                    [ classList
+                        [ ( c.boxItem, True )
+                        , ( c.boxItemActive, model.boxPosition == pos )
+                        ]
+                    , onMouseDown (MouseClick item)
                     ]
-                , onMouseDown (MouseClick item)
-                ]
-                [ text item.display ]
+                    boxItem
     in
         div [ class c.boxItems ] (List.indexedMap boxItemHtml model.boxItems)
 
@@ -484,54 +520,58 @@ boxView h model =
 
 view : HtmlOptions -> List String -> Model -> Html Msg
 view h fallbackCodes model =
-    let
-        fallbackItems =
-            pickItems model.availableItems fallbackCodes
-
-        editInput =
-            case model.status of
-                Initial ->
-                    if (List.length model.selectedItems) < model.maxItems then
-                        input [ onBlur Blur, onInput Input ] []
-                    else
-                        input [ onBlur Blur, onInput Input, maxlength 0 ] []
-
-                Idle ->
-                    if (List.length model.selectedItems) < model.maxItems then
-                        input [ onBlur Blur, onInput Input ] []
-                    else
-                        input [ onBlur Blur, onInput Input, maxlength 0 ] []
-
-                Editing ->
-                    let
-                        maxlength' =
-                            if List.length model.boxItems == 0 then
-                                0
-                            else
-                                524288
-                    in
-                        input [ maxlength maxlength', onBlur Blur, onInput Input, class h.classes.inputEditing ] []
-
-                Cleared ->
-                    input [ onKeyUp KeyUp, value "", onBlur Blur, onInput Input ] []
-
-                Blurred ->
-                    input [ id "this-id", maxlength 0, onFocus Focus, value "" ] []
-    in
+    if List.length model.availableItems == 0 then
         div [ class h.classes.container ]
-            [ label
-                [ classList
-                    [ ( h.classes.singleItemContainer, model.maxItems == 1 )
-                    , ( h.classes.multiItemContainer, model.maxItems > 1 )
+            [ div [ class h.classes.noOptions ] [ text h.noOptions ] ]
+    else
+        let
+            fallbackItems =
+                pickItems model.availableItems fallbackCodes
+
+            editInput =
+                case model.status of
+                    Initial ->
+                        if (List.length model.selectedItems) < model.maxItems then
+                            input [ onBlur Blur, onInput Input ] []
+                        else
+                            input [ onBlur Blur, onInput Input, maxlength 0 ] []
+
+                    Idle ->
+                        if (List.length model.selectedItems) < model.maxItems then
+                            input [ onBlur Blur, onInput Input ] []
+                        else
+                            input [ onBlur Blur, onInput Input, maxlength 0 ] []
+
+                    Editing ->
+                        let
+                            maxlength' =
+                                if List.length model.boxItems == 0 then
+                                    0
+                                else
+                                    524288
+                        in
+                            input [ maxlength maxlength', onBlur Blur, onInput Input, class h.classes.inputEditing ] []
+
+                    Cleared ->
+                        input [ onKeyUp KeyUp, value "", onBlur Blur, onInput Input ] []
+
+                    Blurred ->
+                        input [ id "this-id", maxlength 0, onFocus Focus, value "" ] []
+        in
+            div [ class h.classes.container ]
+                [ label
+                    [ classList
+                        [ ( h.classes.singleItemContainer, model.maxItems == 1 )
+                        , ( h.classes.multiItemContainer, model.maxItems > 1 )
+                        ]
+                    ]
+                    [ span [ class h.classes.selectBox, onKeyDown KeyDown ]
+                        [ span [] [ itemsView h fallbackItems model.selectedItems model ]
+                        , editInput
+                        ]
+                    , boxView h model
                     ]
                 ]
-                [ span [ class h.classes.selectBox, onKeyDown KeyDown ]
-                    [ span [] [ itemsView h fallbackItems model.selectedItems model ]
-                    , editInput
-                    ]
-                , boxView h model
-                ]
-            ]
 
 
 onKeyDown : (Int -> msg) -> Attribute msg

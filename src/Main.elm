@@ -4,6 +4,7 @@ import Html exposing (..)
 import Html.App as App
 import Selectize exposing (selectizeItem)
 import Html.App
+import String
 
 
 main : Program Never
@@ -48,11 +49,11 @@ selectedCodes =
 
 mapCurrency : { a | code : String, display : String } -> SelectizeItem
 mapCurrency rawCurrency =
-    { id = rawCurrency.code
-    , selectedDisplay = text rawCurrency.code
-    , optionDisplay = text rawCurrency.display
-    , searchWords = [ rawCurrency.code, rawCurrency.display ]
-    }
+    Selectize.selectizeItem
+        rawCurrency.code
+        (text rawCurrency.code)
+        (text rawCurrency.display)
+        (rawCurrency.code :: (String.split " " rawCurrency.display))
 
 
 availableItems : List SelectizeItem

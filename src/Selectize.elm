@@ -81,7 +81,7 @@ selectizeItem id selectedDisplay optionDisplay searchWords =
     { id = id
     , selectedDisplay = selectedDisplay
     , optionDisplay = optionDisplay
-    , searchWords = searchWords
+    , searchWords = List.map clean searchWords
     }
 
 

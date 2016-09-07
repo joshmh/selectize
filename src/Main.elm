@@ -25,8 +25,20 @@ type CurrencyRec
 
 
 type alias Model =
-    { selectize : Selectize.Model
+    { selectize : Selectize.Model String Msg
     }
+
+
+type alias SelectizeModel =
+    Selectize.Model String Msg
+
+
+type alias SelectizeItem =
+    Selectize.Item String Msg
+
+
+type alias SelectizeMsgType =
+    Selectize.Msg String Msg
 
 
 selectedCodes : List String
@@ -34,9 +46,18 @@ selectedCodes =
     [ "USD", "ILS", "CAD" ]
 
 
-availableItems : List Selectize.Item
+mapCurrency : { a | code : String, display : String } -> SelectizeItem
+mapCurrency rawCurrency =
+    { id = rawCurrency.code
+    , selectedDisplay = text rawCurrency.code
+    , optionDisplay = text rawCurrency.display
+    , searchWords = [ rawCurrency.code, rawCurrency.display ]
+    }
+
+
+availableItems : List SelectizeItem
 availableItems =
-    currencies
+    List.map mapCurrency rawCurrencies
 
 
 init : ( Model, Cmd Msg )
@@ -53,7 +74,7 @@ init =
 
 
 type Msg
-    = SelectizeMsg Selectize.Msg
+    = SelectizeMsg SelectizeMsgType
 
 
 update : Msg -> Model -> ( Model, Cmd Msg )
@@ -128,8 +149,8 @@ subscriptions model =
     Sub.none
 
 
-currencies : List Selectize.Item
-currencies =
+rawCurrencies : List { code : String, display : String, searchWords : List a }
+rawCurrencies =
     [ { code = "AFN"
       , display = "Afghani"
       , searchWords = []

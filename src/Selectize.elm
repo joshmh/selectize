@@ -49,8 +49,6 @@ type alias HtmlClasses =
     , boxItems : String
     , boxItem : String
     , boxItemActive : String
-    , majorOptionDisplay : String
-    , minorOptionDisplay : String
     , info : String
     , infoNoMatches : String
     , inputEditing : String
@@ -61,11 +59,10 @@ type alias H =
     HtmlOptions
 
 
-type alias Item =
-    { code : String
-    , selectedDisplay : String
-    , majorOptionDisplay : String
-    , minorOptionDisplay : Maybe String
+type alias Item idType msg =
+    { id : idType
+    , selectedDisplay : Html msg
+    , optionDisplay : Html msg
     , searchWords : List String
     }
 
@@ -78,42 +75,41 @@ type Status
     | Blurred
 
 
-selectizeItem : String -> String -> List String -> Item
-selectizeItem code display searchWords =
-    { code = code
-    , selectedDisplay = code
-    , majorOptionDisplay = display
-    , minorOptionDisplay = Nothing
+selectizeItem : idType -> Html msg -> Html msg -> List String -> Item idType msg
+selectizeItem id selectedDisplay optionDisplay searchWords =
+    { id = id
+    , selectedDisplay = selectedDisplay
+    , optionDisplay = optionDisplay
     , searchWords = searchWords
     }
 
 
-type alias Items =
-    List Item
+type alias Items idType msg =
+    List (Item idType msg)
 
 
-type alias Model =
+type alias Model idType msg =
     { maxItems : Int
     , boxLength : Int
-    , selectedItems : List Item
-    , availableItems : List Item
-    , boxItems : List Item
+    , selectedItems : Items idType msg
+    , availableItems : Items idType msg
+    , boxItems : Items idType msg
     , boxPosition : Int
     , status : Status
     }
 
 
-pickItems : Items -> List String -> Items
+pickItems : Items idType msg -> List String -> Items idType msg
 pickItems items codes =
     List.filter (\item -> (List.member item.code codes)) items
 
 
-defaultItems : Int -> Items -> Items -> Items
+defaultItems : Int -> Items idType msg -> Items idType msg -> Items idType msg
 defaultItems boxLength availableItems selectedItems =
     List.take boxLength (diffItems availableItems selectedItems)
 
 
-init : Int -> Int -> List String -> Items -> Model
+init : Int -> Int -> List String -> Items idType msg -> Model idType msg
 init maxItems boxLength selectedCodes availableItems =
     let
         selectedItems =
@@ -133,11 +129,11 @@ init maxItems boxLength selectedCodes availableItems =
 -- UPDATE
 
 
-type Msg
+type Msg idType msg idType msg
     = Input String
     | KeyDown Int
     | KeyUp Int
-    | MouseClick Item
+    | MouseClick (Item idType msg)
     | Blur
     | Focus
 
@@ -147,12 +143,12 @@ focused msg =
     msg == Focus
 
 
-blurred : Msg -> Bool
+blurred : Msg idType msg -> Bool
 blurred msg =
     msg == Blur
 
 
-selectedItemCodes : Model -> List String
+selectedItemCodes : Model idType msg -> List String
 selectedItemCodes model =
     List.map .code model.selectedItems
 
@@ -163,7 +159,7 @@ clean s =
         |> String.toLower
 
 
-score : String -> Item -> ( Int, Item )
+score : String -> Item idType msg -> ( Int, Item idType msg )
 score needle hay =
     let
         cleanNeedle =
@@ -194,7 +190,7 @@ score needle hay =
         ( score, hay )
 
 
-diffItems : Items -> Items -> Items
+diffItems : Items idType msg -> Items idType msg -> Items idType msg
 diffItems a b =
     let
         isEqual itemA itemB =
@@ -207,7 +203,7 @@ diffItems a b =
         List.filter (notInB b) a
 
 
-updateInput : String -> Model -> ( Model, Cmd Msg )
+updateInput : String -> Model idType msg -> ( Model idType msg, Cmd Msg )
 updateInput string model =
     if (String.length string == 0) then
         { model
@@ -231,7 +227,7 @@ updateInput string model =
             { model | status = Editing, boxItems = boxItems } ! []
 
 
-updateSelectedItem : Item -> Model -> ( Model, Cmd Msg )
+updateSelectedItem : Item idType msg -> Model idType msg -> ( Model idType msg, Cmd Msg )
 updateSelectedItem item model =
     let
         selectedItems =
@@ -249,7 +245,7 @@ updateSelectedItem item model =
             ! []
 
 
-updateEnterKey : Model -> ( Model, Cmd Msg )
+updateEnterKey : Model idType msg -> ( Model idType msg, Cmd Msg )
 updateEnterKey model =
     let
         maybeItem =
@@ -263,7 +259,7 @@ updateEnterKey model =
                 updateSelectedItem item model
 
 
-updateBox : Int -> Model -> ( Model, Cmd Msg )
+updateBox : Int -> Model idType msg -> ( Model idType msg, Cmd Msg )
 updateBox keyCode model =
     if List.length model.selectedItems == model.maxItems then
         model ! []
@@ -291,7 +287,7 @@ updateBox keyCode model =
                 model ! []
 
 
-updateBoxInitial : Int -> Model -> ( Model, Cmd Msg )
+updateBoxInitial : Int -> Model idType msg -> ( Model idType msg, Cmd Msg )
 updateBoxInitial keyCode originalModel =
     let
         ( model, cmd ) =
@@ -320,7 +316,7 @@ updateBoxInitial keyCode originalModel =
                 model ! [ cmd ]
 
 
-updateKey : Int -> Model -> ( Model, Cmd Msg )
+updateKey : Int -> Model idType msg -> ( Model idType msg, Cmd Msg )
 updateKey keyCode model =
     case model.status of
         Editing ->
@@ -339,7 +335,7 @@ updateKey keyCode model =
             model ! []
 
 
-update : Msg -> Model -> ( Model, Cmd Msg )
+update : Msg -> Model idType msg -> ( Model idType msg, Cmd Msg )
 update msg model =
     case msg of
         Input string ->
@@ -378,7 +374,7 @@ update msg model =
 -- VIEW
 
 
-itemView : HtmlOptions -> Bool -> Item -> Html Msg
+itemView : HtmlOptions -> Bool -> Item idType msg -> Html Msg
 itemView h isFallback item =
     span
         [ classList
@@ -389,7 +385,7 @@ itemView h isFallback item =
         [ text item.selectedDisplay ]
 
 
-fallbackItemsView : HtmlOptions -> List Item -> List Item -> Model -> Html Msg
+fallbackItemsView : HtmlOptions -> Items idType msg -> Items idType msg -> Model idType msg -> Html Msg
 fallbackItemsView h fallbackItems selectedItems model =
     let
         classes =
@@ -410,7 +406,7 @@ fallbackItemsView h fallbackItems selectedItems model =
         span [ classes ] (List.map (itemView h isFallback) items)
 
 
-itemsView : HtmlOptions -> List Item -> List Item -> Model -> Html Msg
+itemsView : HtmlOptions -> Items idType msg -> Items idType msg -> Model idType msg -> Html Msg
 itemsView h fallbackItems selectedItems model =
     case model.status of
         Editing ->
@@ -429,7 +425,7 @@ itemsView h fallbackItems selectedItems model =
             fallbackItemsView h fallbackItems selectedItems model
 
 
-editingBoxView : HtmlOptions -> Model -> Html Msg
+editingBoxView : HtmlOptions -> Model idType msg -> Html Msg
 editingBoxView h model =
     let
         c =
@@ -460,7 +456,7 @@ editingBoxView h model =
         div [ class c.boxItems ] (List.indexedMap boxItemHtml model.boxItems)
 
 
-idleBoxView : HtmlOptions -> Model -> Html Msg
+idleBoxView : HtmlOptions -> Model idType msg -> Html Msg
 idleBoxView h model =
     let
         remainingItems =
@@ -482,7 +478,7 @@ idleBoxView h model =
                 ]
 
 
-noMatches : HtmlOptions -> Model -> Html Msg
+noMatches : HtmlOptions -> Model idType msg -> Html Msg
 noMatches h model =
     if List.length model.boxItems == 0 then
         div
@@ -496,7 +492,7 @@ noMatches h model =
         span [] []
 
 
-boxView : HtmlOptions -> Model -> Html Msg
+boxView : HtmlOptions -> Model idType msg -> Html Msg
 boxView h model =
     case model.status of
         Editing ->
@@ -518,7 +514,7 @@ boxView h model =
             span [] []
 
 
-view : HtmlOptions -> List String -> Model -> Html Msg
+view : HtmlOptions -> List String -> Model idType msg -> Html Msg
 view h fallbackCodes model =
     if List.length model.availableItems == 0 then
         div [ class h.classes.container ]

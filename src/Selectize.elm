@@ -113,7 +113,16 @@ updateKeyUp config items state keyCode =
 updateKeyDown : Config msg idType itemType -> Items itemType -> State -> Int -> msg
 updateKeyDown config items state keyCode =
     if List.length items.selectedItems == config.maxItems then
-        config.toMsg state
+        case keyCode of
+            -- backspace
+            8 ->
+                if String.isEmpty state.string && (not << List.isEmpty) items.selectedItems then
+                    Debug.log "DEBUG3" config.onRemove state
+                else
+                    Debug.log "DEBUG4" config.toMsg state
+
+            _ ->
+                config.toMsg state
     else
         case keyCode of
             -- up
@@ -142,6 +151,13 @@ updateKeyDown config items state keyCode =
 
                         Just item ->
                             config.onAdd (config.toId item) { state | status = Cleared, boxPosition = -1 }
+
+            -- backspace
+            8 ->
+                if String.isEmpty state.string && (not << List.isEmpty) items.selectedItems then
+                    config.onRemove state
+                else
+                    config.toMsg state
 
             _ ->
                 config.toMsg state

@@ -26,6 +26,7 @@ type CurrencyRec
 
 type alias Model =
     { selectizeState : Selectize.State
+    , selectedItems : List Item
     }
 
 
@@ -59,7 +60,10 @@ availableItems =
 
 init : ( Model, Cmd Msg )
 init =
-    { selectizeState = Selectize.initialSelectize } ! []
+    { selectizeState = Selectize.initialSelectize
+    , selectedItems = selectedItems
+    }
+        ! []
 
 
 
@@ -78,19 +82,19 @@ update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
     case msg of
         SelectizeMsg state ->
-            { selectizeState = state } ! []
+            { model | selectizeState = state } ! []
 
         Focus state ->
-            { selectizeState = state } ! []
+            { model | selectizeState = (Debug.log "DEBUG1" state) } ! []
 
         Blur state ->
-            { selectizeState = state } ! []
+            { model | selectizeState = state } ! []
 
         Add code state ->
-            { selectizeState = state } ! []
+            { model | selectizeState = state } ! []
 
         Remove state ->
-            { selectizeState = state } ! []
+            Debug.log "DEBUG2" { model | selectedItems = List.drop 1 model.selectedItems, selectizeState = state } ! []
 
 
 
@@ -159,7 +163,7 @@ fallbackItems =
 view : Model -> Html Msg
 view model =
     div []
-        [ Selectize.view config selectedItems availableItems fallbackItems model.selectizeState
+        [ Selectize.view config model.selectedItems availableItems fallbackItems model.selectizeState
         ]
 
 

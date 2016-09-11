@@ -1,22 +1,14 @@
 module Selectize
     exposing
-        ( init
-        , update
+        ( initialSelectize
         , view
-        , selectizeItem
-        , selectedIds
-        , Model
-        , Msg
-        , Item
-        , HtmlOptions
-        , HtmlClasses
-        , focused
-        , blurred
+        , State
+        , Config
         )
 
 import Html exposing (..)
 import Html.Attributes exposing (value, defaultValue, maxlength, class, classList, id)
-import Html.Events exposing (onInput, onBlur, onFocus, onMouseDown, onClick, on)
+import Html.Events exposing (on)
 import Fuzzy
 import String
 import Json.Decode
@@ -59,14 +51,6 @@ type alias H =
     HtmlOptions
 
 
-type alias Item idType =
-    { id : idType
-    , selectedDisplay : String
-    , optionDisplay : String
-    , searchWords : List String
-    }
-
-
 type Status
     = Initial
     | Editing
@@ -75,82 +59,41 @@ type Status
     | Blurred
 
 
-selectizeItem : idType -> String -> String -> List String -> Item idType
-selectizeItem id selectedDisplay optionDisplay searchWords =
-    { id = id
-    , selectedDisplay = selectedDisplay
-    , optionDisplay = optionDisplay
-    , searchWords = List.map clean searchWords
-    }
-
-
-type alias Items idType =
-    List (Item idType)
-
-
-type alias Model idType =
-    { maxItems : Int
-    , boxLength : Int
-    , selectedItems : Items idType
-    , availableItems : Items idType
-    , boxItems : Items idType
-    , boxPosition : Int
+type alias State =
+    { boxPosition : Int
     , status : Status
     }
 
 
-pickItems : Items idType -> List idType -> Items idType
-pickItems items ids =
-    List.filter (\item -> (List.member item.id ids)) items
+type alias Config msg idType itemType =
+    { maxItems : Int
+    , boxLength : Int
+    , toMsg : State -> msg
+    , onAdd : idType -> msg
+    , onRemove : msg
+    , onFocus : msg
+    , onBlur : msg
+    , toId : itemType -> idType
+    , toDisplay : itemType -> String
+    , match : String -> List itemType -> List itemType
+    , htmlOptions : HtmlOptions
+    }
 
 
-defaultItems : Int -> Items idType -> Items idType -> Items idType
-defaultItems boxLength availableItems selectedItems =
-    List.take boxLength (diffItems availableItems selectedItems)
+type alias Items itemType =
+    { selectedItems : List itemType
+    , availableItems : List itemType
+    , boxItems : List itemType
+    }
 
 
-init : Int -> Int -> List idType -> Items idType -> Model idType
-init maxItems boxLength selectedIds availableItems =
-    let
-        selectedItems =
-            pickItems availableItems (List.take maxItems selectedIds)
-    in
-        { maxItems = maxItems
-        , boxLength = boxLength
-        , selectedItems = selectedItems
-        , availableItems = availableItems
-        , boxItems = defaultItems boxLength availableItems selectedItems
-        , boxPosition = 0
-        , status = Blurred
-        }
+initialSelectized : State
+initialSelectized =
+    { boxPosition = -1, state = Blurred }
 
 
 
 -- UPDATE
-
-
-type Msg idType
-    = Input String
-    | KeyDown Int
-    | KeyUp Int
-    | MouseClick (Item idType)
-    | Blur
-    | Focus
-
-
-focused : Msg idType -> Bool
-focused msg =
-    msg == Focus
-
-
-blurred : Msg idType -> Bool
-blurred msg =
-    msg == Blur
-
-
-selectedIds : Model idType -> List idType
-selectedIds model =
-    List.map .id model.selectedItems
 
 
 clean : String -> String
@@ -159,30 +102,11 @@ clean s =
         |> String.toLower
 
 
-score : String -> Item idType -> ( Int, Item idType )
-score needle hay =
-    let
-        cleanNeedle =
-            clean needle
-
-        match keyword =
-            Fuzzy.match [] [] cleanNeedle keyword
-                |> .score
-
-        score =
-            List.map match hay.searchWords
-                |> List.minimum
-                |> Maybe.withDefault
-                    10000
-    in
-        ( score, hay )
-
-
-diffItems : Items idType -> Items idType -> Items idType
-diffItems a b =
+diffItems : Config msg idType itemType -> List itemType -> List itemType -> List itemType
+diffItems config a b =
     let
         isEqual itemA itemB =
-            itemA.id == itemB.id
+            config.toId itemA == config.toId itemB.id
 
         notInB b item =
             (List.any (isEqual item) b)
@@ -191,178 +115,102 @@ diffItems a b =
         List.filter (notInB b) a
 
 
-updateInput : String -> Model idType -> ( Model idType, Cmd (Msg idType) )
-updateInput string model =
-    if (String.length string == 0) then
-        { model
-            | status = Idle
-            , boxItems =
-                defaultItems model.boxLength model.availableItems (Debug.log "DEBUG1" model.selectedItems)
-        }
-            ! []
-    else
-        let
-            unselectedItems =
-                diffItems model.availableItems (Debug.log "DEBUG2" model.selectedItems)
-
-            boxItems =
-                List.map (score string) unselectedItems
-                    |> List.sortBy fst
-                    |> List.take model.boxLength
-                    |> List.filter (((>) 1100) << fst)
-                    |> List.map snd
-        in
-            { model | status = Editing, boxItems = boxItems } ! []
-
-
-updateSelectedItem : Item idType -> Model idType -> ( Model idType, Cmd (Msg idType) )
-updateSelectedItem item model =
+updateInput : Config msg idType itemType -> String -> Items itemType -> State -> State
+updateInput config string items state =
     let
-        selectedItems =
-            model.selectedItems ++ [ item ]
-
-        boxItems =
-            defaultItems model.boxLength model.availableItems selectedItems
+        status =
+            if (String.length string == 0) then
+                Idle
+            else
+                Editing
     in
-        { model
-            | status = Cleared
-            , selectedItems = selectedItems
-            , boxItems = boxItems
-            , boxPosition = 0
-        }
-            ! []
+        { state | status = status }
 
 
-updateEnterKey : Model idType -> ( Model idType, Cmd (Msg idType) )
-updateEnterKey model =
-    let
-        maybeItem =
-            (List.head << (List.drop model.boxPosition)) model.boxItems
-    in
-        case maybeItem of
-            Nothing ->
-                model ! []
-
-            Just item ->
-                updateSelectedItem item model
-
-
-updateBox : Int -> Model idType -> ( Model idType, Cmd (Msg idType) )
-updateBox keyCode model =
-    if List.length model.selectedItems == model.maxItems then
-        model ! []
+updateBox : Config msg idType itemType -> Items itemType -> Int -> State -> State
+updateBox config items keyCode state =
+    if List.length items.selectedItems == config.maxItems then
+        state
     else
         case keyCode of
             -- up
             38 ->
-                { model | boxPosition = (max 0 (model.boxPosition - 1)) } ! []
+                { state | boxPosition = (max -1 (state.boxPosition - 1)) }
 
             -- down
             40 ->
-                { model
+                { state
                     | boxPosition =
-                        (min ((List.length model.boxItems) - 1)
-                            (model.boxPosition + 1)
+                        (min ((List.length items.boxItems) - 1)
+                            (state.boxPosition + 1)
                         )
                 }
-                    ! []
 
             -- enter
             13 ->
-                updateEnterKey model
+                { state | status = Cleared, boxPosition = -1 }
 
             _ ->
-                model ! []
-
-
-updateBoxInitial : Int -> Model idType -> ( Model idType, Cmd (Msg idType) )
-updateBoxInitial keyCode originalModel =
-    let
-        ( model, cmd ) =
-            updateBox keyCode originalModel
-    in
-        case keyCode of
-            -- backspace
-            8 ->
-                let
-                    allButLast =
-                        max 0 ((List.length model.selectedItems) - 1)
-
-                    newSelectedItems =
-                        List.take allButLast model.selectedItems
-
-                    boxItems =
-                        defaultItems model.boxLength model.availableItems newSelectedItems
-                in
-                    { model
-                        | selectedItems = newSelectedItems
-                        , boxItems = boxItems
-                    }
-                        ! [ cmd ]
-
-            _ ->
-                model ! [ cmd ]
-
-
-updateKey : Int -> Model idType -> ( Model idType, Cmd (Msg idType) )
-updateKey keyCode model =
-    case model.status of
-        Editing ->
-            updateBox keyCode model
-
-        Initial ->
-            updateBoxInitial keyCode model
-
-        Idle ->
-            updateBoxInitial keyCode model
-
-        Cleared ->
-            updateBoxInitial keyCode model
-
-        Blurred ->
-            model ! []
-
-
-update : Msg idType -> Model idType -> ( Model idType, Cmd (Msg idType) )
-update msg model =
-    case msg of
-        Input string ->
-            updateInput string model
-
-        KeyDown code ->
-            updateKey code model
-
-        KeyUp code ->
-            if model.status == Cleared && code == 13 then
-                { model | status = Idle } ! []
-            else
-                model ! []
-
-        MouseClick item ->
-            updateSelectedItem item model
-
-        Blur ->
-            { model
-                | status = Blurred
-                , boxPosition = 0
-                , boxItems = defaultItems model.boxLength model.availableItems model.selectedItems
-            }
-                ! []
-
-        Focus ->
-            { model
-                | status = Initial
-                , boxPosition = 0
-                , boxItems = defaultItems model.boxLength model.availableItems model.selectedItems
-            }
-                ! []
+                state
 
 
 
+-- updateKey : Int -> Model idType -> ( Model idType, Cmd (Msg idType) )
+-- updateKey keyCode model =
+--     case model.status of
+--         Editing ->
+--             updateBox keyCode model
+--
+--         Initial ->
+--             updateBoxInitial keyCode model
+--
+--         Idle ->
+--             updateBoxInitial keyCode model
+--
+--         Cleared ->
+--             updateBoxInitial keyCode model
+--
+--         Blurred ->
+--             model ! []
+--
+--
+-- update : Msg idType -> Model idType -> ( Model idType, Cmd (Msg idType) )
+-- update msg model =
+--     case msg of
+--         Input string ->
+--             updateInput string model
+--
+--         KeyDown code ->
+--             updateKey code model
+--
+--         KeyUp code ->
+--             if model.status == Cleared && code == 13 then
+--                 { model | status = Idle } ! []
+--             else
+--                 model ! []
+--
+--         MouseClick item ->
+--             updateSelectedItem item model
+--
+--         Blur ->
+--             { model
+--                 | status = Blurred
+--                 , boxPosition = 0
+--                 , boxItems = defaultItems model.boxLength model.availableItems model.selectedItems
+--             }
+--                 ! []
+--
+--         Focus ->
+--             { model
+--                 | status = Initial
+--                 , boxPosition = 0
+--                 , boxItems = defaultItems model.boxLength model.availableItems model.selectedItems
+--             }
+--                 ! []
 -- VIEW
 
 
-itemView : HtmlOptions -> Bool -> Item idType -> Html (Msg idType)
+itemView : HtmlOptions -> Bool -> Item idType -> Html msg
 itemView h isFallback item =
     span
         [ classList
@@ -490,34 +338,37 @@ boxView h model =
             span [] []
 
 
-view : HtmlOptions -> List idType -> Model idType -> Html (Msg idType)
-view h fallbackIds model =
-    if List.length model.availableItems == 0 then
-        div [ class h.classes.container ]
-            [ div [ class h.classes.noOptions ] [ text h.noOptions ] ]
+view : Config msg idType itemType -> List itemType -> List itemType -> List itemType -> State -> Html msg
+view config selectedItems availableItems fallbackItems state =
+    if List.length availableItems == 0 then
+        div [ class config.htmlOptions.classes.container ]
+            [ div [ class config.htmlOptions.classes.noOptions ] [ text config.htmlOptions.noOptions ] ]
     else
         let
-            fallbackItems =
-                pickItems model.availableItems fallbackIds
+            h =
+                config.htmlOptions
+
+            boxItems =
+                buildBoxItems config state selectedItems availableItems
 
             editInput =
-                case model.status of
+                case state.status of
                     Initial ->
-                        if (List.length model.selectedItems) < model.maxItems then
-                            input [ onBlur Blur, onInput Input ] []
+                        if (List.length selectedItems) < config.maxItems then
+                            input [ onBlur config, onInput config ] []
                         else
-                            input [ onBlur Blur, onInput Input, maxlength 0 ] []
+                            input [ onBlur config, onInput config, maxlength 0 ] []
 
                     Idle ->
-                        if (List.length model.selectedItems) < model.maxItems then
-                            input [ onBlur Blur, onInput Input ] []
+                        if (List.length selectedItems) < config.maxItems then
+                            input [ onBlur config, onInput config ] []
                         else
-                            input [ onBlur Blur, onInput Input, maxlength 0 ] []
+                            input [ onBlur config, onInput config, maxlength 0 ] []
 
                     Editing ->
                         let
                             maxlength' =
-                                if List.length model.boxItems == 0 then
+                                if List.length boxItems == 0 then
                                     0
                                 else
                                     524288
@@ -525,7 +376,7 @@ view h fallbackIds model =
                             input [ maxlength maxlength', onBlur Blur, onInput Input, class h.classes.inputEditing ] []
 
                     Cleared ->
-                        input [ onKeyUp KeyUp, value "", onBlur Blur, onInput Input ] []
+                        input [ onKeyUp config, value "", onBlur Blur, onInput Input ] []
 
                     Blurred ->
                         input [ maxlength 0, onFocus Focus, value "" ] []
@@ -533,15 +384,15 @@ view h fallbackIds model =
             div [ class h.classes.container ]
                 [ label
                     [ classList
-                        [ ( h.classes.singleItemContainer, model.maxItems == 1 )
-                        , ( h.classes.multiItemContainer, model.maxItems > 1 )
+                        [ ( h.classes.singleItemContainer, config.maxItems == 1 )
+                        , ( h.classes.multiItemContainer, config.maxItems > 1 )
                         ]
                     ]
-                    [ span [ class h.classes.selectBox, onKeyDown KeyDown ]
-                        [ span [] [ itemsView h fallbackItems model.selectedItems model ]
+                    [ span [ class h.classes.selectBox, onKeyDown config ]
+                        [ span [] [ itemsView h fallbackItems selectedItems state ]
                         , editInput
                         ]
-                    , boxView h model
+                    , boxView h state
                     ]
                 ]
 

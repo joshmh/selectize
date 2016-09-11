@@ -136,7 +136,6 @@ type Msg idType
     | MouseClick (Item idType)
     | Blur
     | Focus
-    | ParentMsg
 
 
 focused : Msg idType -> Bool
@@ -357,9 +356,6 @@ update msg model =
                 , boxItems = defaultItems model.boxLength model.availableItems model.selectedItems
             }
                 ! []
-
-        ParentMsg ->
-            model ! []
 
 
 

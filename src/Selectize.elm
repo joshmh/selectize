@@ -88,6 +88,10 @@ type alias Items idType =
     List (Item idType)
 
 
+type alias Config =
+    {}
+
+
 type alias Model idType =
     { maxItems : Int
     , boxLength : Int

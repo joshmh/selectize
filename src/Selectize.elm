@@ -1,11 +1,11 @@
 module Selectize
     exposing
-        ( init
+        ( initSelectize
         , update
         , view
         , selectizeItem
         , selectedIds
-        , Model
+        , State
         , Msg
         , Item
         , HtmlOptions
@@ -16,7 +16,7 @@ module Selectize
 
 import Html exposing (..)
 import Html.Attributes exposing (value, defaultValue, maxlength, class, classList, id)
-import Html.Events exposing (onInput, onBlur, onFocus, onMouseDown, onClick, on)
+import Html.Events exposing (on)
 import Fuzzy
 import String
 import Json.Decode
@@ -89,17 +89,16 @@ type alias Items idType =
 
 
 type alias Config =
-    {}
-
-
-type alias Model idType =
     { maxItems : Int
     , boxLength : Int
-    , selectedItems : Items idType
-    , availableItems : Items idType
-    , boxItems : Items idType
-    , boxPosition : Int
+    , htmlOptions : HtmlOptions
+    }
+
+
+type alias State =
+    { boxPosition : Int
     , status : Status
+    , search : String
     }
 
 
@@ -113,48 +112,32 @@ defaultItems boxLength availableItems selectedItems =
     List.take boxLength (diffItems availableItems selectedItems)
 
 
-init : Int -> Int -> List idType -> Items idType -> Model idType
-init maxItems boxLength selectedIds availableItems =
-    let
-        selectedItems =
-            pickItems availableItems (List.take maxItems selectedIds)
-    in
-        { maxItems = maxItems
-        , boxLength = boxLength
-        , selectedItems = selectedItems
-        , availableItems = availableItems
-        , boxItems = defaultItems boxLength availableItems selectedItems
-        , boxPosition = 0
-        , status = Blurred
-        }
+initialSelectize : State
+initialSelectize =
+    { boxPosition = -1, status = Blurred }
 
 
 
 -- UPDATE
 
 
-type Msg idType
+type Msg
     = Input String
     | KeyDown Int
     | KeyUp Int
-    | MouseClick (Item idType)
+    | MouseClick Int
     | Blur
     | Focus
 
 
-focused : Msg idType -> Bool
+focused : Msg -> Bool
 focused msg =
     msg == Focus
 
 
-blurred : Msg idType -> Bool
+blurred : Msg -> Bool
 blurred msg =
     msg == Blur
-
-
-selectedIds : Model idType -> List idType
-selectedIds model =
-    List.map .id model.selectedItems
 
 
 clean : String -> String
@@ -550,11 +533,36 @@ view h fallbackIds model =
                 ]
 
 
-onKeyDown : (Int -> msg) -> Attribute msg
-onKeyDown tagger =
+onKeyDown : (Int -> id) -> State -> Config -> Attribute msg
+onKeyDown mapToId state config =
+    let
+        tagger int =
+            case int of
+                -- up
+                38 ->
+                    config.toMsg { state | boxPosition = (max -1 (state.boxPosition - 1)) }
+
+                -- enter
+                13 ->
+                    config.toAddMsg (mapToId state.boxPosition)
+    in
+        rawOnKeyDown tagger
+
+
+onInput : State -> (State -> msg) -> Attribute msg
+onInput state toMsg =
+    let
+        tagger string =
+            toMsg { state | search = string }
+    in
+        onInput tagger
+
+
+rawOnKeyDown : (Int -> msg) -> Attribute msg
+rawOnKeyDown tagger =
     on "keydown" (Json.Decode.map tagger Html.Events.keyCode)
 
 
-onKeyUp : (Int -> msg) -> Attribute msg
-onKeyUp tagger =
+rawOnKeyUp : (Int -> msg) -> Attribute msg
+rawOnKeyUp tagger =
     on "keyup" (Json.Decode.map tagger Html.Events.keyCode)

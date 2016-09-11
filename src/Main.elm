@@ -2,9 +2,8 @@ module Main exposing (..)
 
 import Html exposing (..)
 import Html.App as App
-import Selectize exposing (selectizeItem)
+import Selectize
 import Html.App
-import String
 
 
 main : Program Never
@@ -26,20 +25,14 @@ type CurrencyRec
 
 
 type alias Model =
-    { selectize : SelectizeModel
+    { selectizeState : Selectize.State
     }
 
 
-type alias SelectizeModel =
-    Selectize.Model String
-
-
-type alias SelectizeItem =
-    Selectize.Item String
-
-
-type alias SelectizeMsgType =
-    Selectize.Msg String
+type alias Item =
+    { code : String
+    , display : String
+    }
 
 
 selectedCodes : List String
@@ -47,27 +40,26 @@ selectedCodes =
     [ "USD", "ILS", "CAD" ]
 
 
-mapCurrency : { a | code : String, display : String } -> SelectizeItem
+selectedItems : List Item
+selectedItems =
+    List.filter (\item -> List.member item.code selectedCodes) availableItems
+
+
+mapCurrency : { a | code : String, display : String } -> Item
 mapCurrency rawCurrency =
-    Selectize.selectizeItem
-        rawCurrency.code
-        rawCurrency.code
-        rawCurrency.display
-        (rawCurrency.code :: (String.split " " rawCurrency.display))
+    { code = rawCurrency.code
+    , display = rawCurrency.display
+    }
 
 
-availableItems : List SelectizeItem
+availableItems : List Item
 availableItems =
     List.map mapCurrency rawCurrencies
 
 
 init : ( Model, Cmd Msg )
 init =
-    let
-        selectizeModel =
-            Selectize.init 2 5 selectedCodes availableItems
-    in
-        { selectize = selectizeModel } ! []
+    { selectizeState = Selectize.initialSelectize } ! []
 
 
 
@@ -75,63 +67,89 @@ init =
 
 
 type Msg
-    = SelectizeMsg SelectizeMsgType
+    = SelectizeMsg Selectize.State
+    | Focus Selectize.State
+    | Blur Selectize.State
+    | Add String Selectize.State
+    | Remove Selectize.State
 
 
 update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
-    let
-        updateSelectize selectizeMsg =
-            let
-                ( selectizeModel, selectizeCmd ) =
-                    Selectize.update selectizeMsg model.selectize
-            in
-                { model | selectize = selectizeModel } ! [ Cmd.map SelectizeMsg selectizeCmd ]
-    in
-        case msg of
-            SelectizeMsg selectizeMsg ->
-                updateSelectize selectizeMsg
+    case msg of
+        SelectizeMsg state ->
+            { selectizeState = state } ! []
+
+        Focus state ->
+            { selectizeState = state } ! []
+
+        Blur state ->
+            { selectizeState = state } ! []
+
+        Add code state ->
+            { selectizeState = state } ! []
+
+        Remove state ->
+            { selectizeState = state } ! []
 
 
 
 -- VIEW
 
 
-htmlClasses : Selectize.HtmlClasses
-htmlClasses =
-    { container = "container"
-    , noOptions = "noOptions"
-    , singleItemContainer = "singleItemContainer"
-    , multiItemContainer = "multiItemContainer"
-    , selectedItems = "selectedItems"
-    , fallbackItems = "fallbackItems"
-    , fallbackItem = "fallbackItem"
-    , selectedItem = "selectedItem"
-    , boxContainer = "boxContainer"
-    , boxItems = "boxItems"
-    , boxItem = "boxItem"
-    , boxItemActive = "activeBoxItem"
-    , selectBox = "selectBox"
-    , info = "info"
-    , infoNoMatches = "infoNoMatches"
-    , inputEditing = "inputEditing"
-    }
+match : String -> List Item
+match string =
+    []
 
 
-htmlOptions : Selectize.HtmlOptions
-htmlOptions =
-    { instructionsForBlank = "Start typing for options"
-    , noMatches = "No matches"
-    , atMaxLength = "Type backspace to edit"
-    , typeForMore = "Type for more options"
-    , noOptions = "No options"
-    , classes = htmlClasses
+config : Selectize.Config Msg String Item
+config =
+    { maxItems = 3
+    , boxLength = 5
+    , toMsg = SelectizeMsg
+    , onAdd = Add
+    , onRemove = Remove
+    , onFocus = Focus
+    , onBlur = Blur
+    , toId = .code
+    , toDisplay = .display
+    , match = match
+    , htmlOptions =
+        { instructionsForBlank = "Start typing for options"
+        , noMatches = "No matches"
+        , atMaxLength = "Type backspace to edit"
+        , typeForMore = "Type for more options"
+        , noOptions = "No options"
+        , classes =
+            { container = "container"
+            , noOptions = "noOptions"
+            , singleItemContainer = "singleItemContainer"
+            , multiItemContainer = "multiItemContainer"
+            , selectedItems = "selectedItems"
+            , fallbackItems = "fallbackItems"
+            , fallbackItem = "fallbackItem"
+            , selectedItem = "selectedItem"
+            , boxContainer = "boxContainer"
+            , boxItems = "boxItems"
+            , boxItem = "boxItem"
+            , boxItemActive = "activeBoxItem"
+            , selectBox = "selectBox"
+            , info = "info"
+            , infoNoMatches = "infoNoMatches"
+            , inputEditing = "inputEditing"
+            }
+        }
     }
 
 
 fallbackCodes : List String
 fallbackCodes =
     []
+
+
+fallbackItems : List Item
+fallbackItems =
+    List.filter (\item -> List.member item.code fallbackCodes) availableItems
 
 
 
@@ -141,7 +159,7 @@ fallbackCodes =
 view : Model -> Html Msg
 view model =
     div []
-        [ Html.App.map SelectizeMsg (Selectize.view htmlOptions fallbackCodes model.selectize)
+        [ Selectize.view config selectedItems availableItems fallbackItems model.selectizeState
         ]
 
 

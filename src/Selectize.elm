@@ -234,12 +234,21 @@ updateEnterKey model =
                 updateSelectedItem item model
 
 
-updateBox : Int -> Model idType -> ( Model idType, Cmd (Msg idType) )
-updateBox keyCode model =
-    if List.length model.selectedItems == model.maxItems then
-        model ! []
+updateBox : Int -> State -> State
+updateBox keyCode state config items =
+    if List.length items.selectedItems == config.maxItems then
+        config.toMsg state
     else
         case keyCode of
+
+                -- up
+                38 ->
+                    config.toMsg { state | boxPosition = (max -1 (state.boxPosition - 1)) }
+
+                -- enter
+                13 ->
+                    config.toAddMsg (mapToId state.boxPosition)
+
             -- up
             38 ->
                 { model | boxPosition = (max 0 (model.boxPosition - 1)) } ! []
@@ -537,6 +546,7 @@ onKeyDown : (Int -> id) -> State -> Config -> Attribute msg
 onKeyDown mapToId state config =
     let
         tagger int =
+            updateKeyDown int state config
             case int of
                 -- up
                 38 ->

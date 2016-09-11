@@ -75,7 +75,7 @@ type alias Config msg idType itemType =
     , onBlur : msg
     , toId : itemType -> idType
     , toDisplay : itemType -> String
-    , match : String -> List itemType -> List itemType
+    , match : String -> List itemType
     , htmlOptions : HtmlOptions
     }
 
@@ -100,19 +100,6 @@ clean : String -> String
 clean s =
     String.trim s
         |> String.toLower
-
-
-diffItems : Config msg idType itemType -> List itemType -> List itemType -> List itemType
-diffItems config a b =
-    let
-        isEqual itemA itemB =
-            config.toId itemA == config.toId itemB.id
-
-        notInB b item =
-            (List.any (isEqual item) b)
-                |> not
-    in
-        List.filter (notInB b) a
 
 
 updateInput : Config msg idType itemType -> String -> Items itemType -> State -> State
@@ -349,7 +336,7 @@ view config selectedItems availableItems fallbackItems state =
                 config.htmlOptions
 
             boxItems =
-                buildBoxItems config state selectedItems availableItems
+                config.match state.string
 
             editInput =
                 case state.status of

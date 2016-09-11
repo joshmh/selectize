@@ -61,6 +61,7 @@ type Status
 type alias State =
     { boxPosition : Int
     , status : Status
+    , string : String
     }
 
 
@@ -68,10 +69,10 @@ type alias Config msg idType itemType =
     { maxItems : Int
     , boxLength : Int
     , toMsg : State -> msg
-    , onAdd : idType -> msg
-    , onRemove : msg
-    , onFocus : msg
-    , onBlur : msg
+    , onAdd : idType -> State -> msg
+    , onRemove : State -> msg
+    , onFocus : State -> msg
+    , onBlur : State -> msg
     , toId : itemType -> idType
     , toDisplay : itemType -> String
     , match : String -> List itemType
@@ -88,7 +89,7 @@ type alias Items itemType =
 
 initialSelectize : State
 initialSelectize =
-    { boxPosition = -1, state = Blurred }
+    { boxPosition = -1, string = "", status = Blurred }
 
 
 
@@ -99,18 +100,6 @@ clean : String -> String
 clean s =
     String.trim s
         |> String.toLower
-
-
-updateInput : String -> State
-updateInput string state =
-    let
-        status =
-            if (String.length string == 0) then
-                Idle
-            else
-                Editing
-    in
-        { state | status = status }
 
 
 updateKeyUp : Config msg idType itemType -> Items itemType -> State -> Int -> msg
@@ -124,7 +113,7 @@ updateKeyUp config items state keyCode =
 updateKeyDown : Config msg idType itemType -> Items itemType -> State -> Int -> msg
 updateKeyDown config items state keyCode =
     if List.length items.selectedItems == config.maxItems then
-        state
+        config.toMsg state
     else
         case keyCode of
             -- up
@@ -183,22 +172,25 @@ fallbackItemsView config items fallbackItems state =
         c =
             config.htmlOptions.classes
 
+        selectedItems =
+            items.selectedItems
+
+        isFallback =
+            List.length selectedItems == 0
+
         classes =
             classList
                 [ ( c.selectedItems, True )
-                , ( c.fallbackItems, List.length items.selectedItems == 0 )
+                , ( c.fallbackItems, isFallback )
                 ]
 
-        isFallback =
-            List.length items.selectedItems == 0
-
-        items =
+        itemsView =
             if isFallback then
                 fallbackItems
             else
                 items.selectedItems
     in
-        span [ classes ] (List.map (itemView config isFallback) items)
+        span [ classes ] (List.map (itemView config isFallback) itemsView)
 
 
 itemsView : Config msg idType itemType -> Items itemType -> List itemType -> State -> Html msg
@@ -237,7 +229,7 @@ editingBoxView config items state =
                     ]
                 , onMouseDown config state (config.toId item)
                 ]
-                [ text item.optionDisplay
+                [ text (config.toDisplay item)
                 ]
     in
         div [ class c.boxItems ] (List.indexedMap boxItemHtml items.boxItems)
@@ -311,6 +303,14 @@ boxView config items state =
                 span [] []
 
 
+buildItems : List itemType -> List itemType -> List itemType -> Items itemType
+buildItems selectedItems availableItems boxItems =
+    { selectedItems = selectedItems
+    , availableItems = availableItems
+    , boxItems = boxItems
+    }
+
+
 view : Config msg idType itemType -> List itemType -> List itemType -> List itemType -> State -> Html msg
 view config selectedItems availableItems fallbackItems state =
     if List.length availableItems == 0 then
@@ -323,6 +323,9 @@ view config selectedItems availableItems fallbackItems state =
 
             boxItems =
                 config.match state.string
+
+            items =
+                buildItems selectedItems availableItems boxItems
 
             onInputAtt =
                 onInput config state
@@ -358,7 +361,7 @@ view config selectedItems availableItems fallbackItems state =
                             input [ maxlength maxlength', onBlurAtt, onInputAtt, class h.classes.inputEditing ] []
 
                     Cleared ->
-                        input [ onKeyUp config, value "", onBlurAtt, onInputAtt ] []
+                        input [ onKeyUp config items state, value "", onBlurAtt, onInputAtt ] []
 
                     Blurred ->
                         input [ maxlength 0, onFocusAtt, value "" ] []
@@ -370,41 +373,48 @@ view config selectedItems availableItems fallbackItems state =
                         , ( h.classes.multiItemContainer, config.maxItems > 1 )
                         ]
                     ]
-                    [ span [ class h.classes.selectBox, onKeyDown config ]
-                        [ span [] [ itemsView h fallbackItems selectedItems state ]
+                    [ span [ class h.classes.selectBox, onKeyDown config items state ]
+                        [ span [] [ itemsView config items fallbackItems state ]
                         , editInput
                         ]
-                    , boxView h state
+                    , boxView config items state
                     ]
                 ]
 
 
 onInput : Config msg idType itemType -> State -> Attribute msg
 onInput config state =
-    E.onInput config.toMsg <| (\s -> { state | string = s })
+    let
+        tagger s =
+            if (String.length s == 0) then
+                config.toMsg { state | status = Idle, string = s }
+            else
+                config.toMsg { state | status = Editing, string = s }
+    in
+        E.onInput tagger
 
 
 onMouseDown : Config msg idType itemType -> State -> idType -> Attribute msg
 onMouseDown config state id =
-    E.onMouseDown (config.onAdd id)
+    E.onMouseDown (config.onAdd id state)
 
 
 onBlur : Config msg idType itemType -> State -> Attribute msg
 onBlur config state =
-    E.onBlur config.onBlur <| (\s -> { state | status = Blurred })
+    E.onBlur (config.onBlur { state | status = Blurred })
 
 
 onFocus : Config msg idType itemType -> State -> Attribute msg
 onFocus config state =
-    E.onBlur config.onFocus <| (\s -> { state | status = Initial, boxPosition = -1 })
+    E.onFocus (config.onFocus { state | status = Initial, boxPosition = -1 })
 
 
-onKeyDown : Config msg idType itemType -> Items items -> State -> Attribute msg
+onKeyDown : Config msg idType itemType -> Items itemType -> State -> Attribute msg
 onKeyDown config items state =
     rawOnKeyDown (updateKeyDown config items state)
 
 
-onKeyUp : Config msg idType itemType -> Items items -> State -> Attribute msg
+onKeyUp : Config msg idType itemType -> Items itemType -> State -> Attribute msg
 onKeyUp config items state =
     rawOnKeyUp (updateKeyUp config items state)
 

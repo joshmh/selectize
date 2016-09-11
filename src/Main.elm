@@ -4,6 +4,7 @@ import Html exposing (..)
 import Html.App as App
 import Selectize
 import Html.App
+import String
 
 
 main : Program Never
@@ -94,16 +95,23 @@ update msg model =
             { model | selectizeState = state } ! []
 
         Remove state ->
-            Debug.log "DEBUG2" { model | selectedItems = List.drop 1 model.selectedItems, selectizeState = state } ! []
+            let
+                updatedItems =
+                    List.take ((List.length model.selectedItems) - 1) model.selectedItems
+            in
+                { model | selectedItems = updatedItems, selectizeState = state } ! []
 
 
 
 -- VIEW
 
 
-match : String -> List Item
-match string =
-    []
+match : String -> List Item -> List Item
+match string items =
+    if (String.isEmpty string) then
+        items
+    else
+        List.filter ((String.contains (String.toLower string)) << String.toLower << .display) items
 
 
 config : Selectize.Config Msg String Item

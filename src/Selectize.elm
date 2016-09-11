@@ -75,7 +75,7 @@ type alias Config msg idType itemType =
     , onBlur : State -> msg
     , toId : itemType -> idType
     , toDisplay : itemType -> String
-    , match : String -> List itemType
+    , match : String -> List itemType -> List itemType
     , htmlOptions : HtmlOptions
     }
 
@@ -327,6 +327,19 @@ buildItems selectedItems availableItems boxItems =
     }
 
 
+diffItems : Config msg idType itemType -> List itemType -> List itemType -> List itemType
+diffItems config a b =
+    let
+        isEqual itemA itemB =
+            config.toId itemA == config.toId itemB
+
+        notInB b item =
+            (List.any (isEqual item) b)
+                |> not
+    in
+        List.filter (notInB b) a
+
+
 view : Config msg idType itemType -> List itemType -> List itemType -> List itemType -> State -> Html msg
 view config selectedItems availableItems fallbackItems state =
     if List.length availableItems == 0 then
@@ -337,8 +350,12 @@ view config selectedItems availableItems fallbackItems state =
             h =
                 config.htmlOptions
 
+            remainingItems =
+                diffItems config availableItems selectedItems
+
             boxItems =
-                config.match state.string
+                config.match state.string remainingItems
+                    |> List.take 5
 
             items =
                 buildItems selectedItems availableItems boxItems

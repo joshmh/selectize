@@ -344,8 +344,14 @@ diffItems config a b =
         List.filter (notInB b) a
 
 
-view : Config msg idType itemType -> List itemType -> List itemType -> List itemType -> State -> Html msg
-view config selectedItems availableItems fallbackItems state =
+mapToItem : (itemType -> idType) -> List itemType -> idType -> Maybe itemType
+mapToItem toId available id =
+    List.filter (((==) id) << toId) available
+        |> List.head
+
+
+view : Config msg idType itemType -> List idType -> List itemType -> List idType -> State -> Html msg
+view config selectedIds availableItems fallbackIds state =
     if List.length availableItems == 0 then
         div [ class config.htmlOptions.classes.container ]
             [ div [ class config.htmlOptions.classes.noOptions ] [ text config.htmlOptions.noOptions ] ]
@@ -353,6 +359,12 @@ view config selectedItems availableItems fallbackItems state =
         let
             h =
                 config.htmlOptions
+
+            selectedItems =
+                List.filterMap (mapToItem config.toId availableItems) selectedIds
+
+            fallbackItems =
+                List.filterMap (mapToItem config.toId availableItems) fallbackIds
 
             remainingItems =
                 diffItems config availableItems selectedItems

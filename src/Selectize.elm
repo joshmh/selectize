@@ -74,7 +74,8 @@ type alias Config msg idType itemType =
     , onFocus : State -> msg
     , onBlur : State -> msg
     , toId : itemType -> idType
-    , toDisplay : itemType -> String
+    , selectedDisplay : itemType -> String
+    , optionDisplay : itemType -> String
     , match : String -> List itemType -> List itemType
     , htmlOptions : HtmlOptions
     }
@@ -117,9 +118,9 @@ updateKeyDown config items state keyCode =
             -- backspace
             8 ->
                 if String.isEmpty state.string && (not << List.isEmpty) items.selectedItems then
-                    Debug.log "DEBUG3" config.onRemove state
+                    Debug.log "DEBUG3" (config.onRemove state)
                 else
-                    Debug.log "DEBUG4" config.toMsg state
+                    Debug.log "DEBUG4" (config.toMsg state)
 
             _ ->
                 config.toMsg state
@@ -143,7 +144,10 @@ updateKeyDown config items state keyCode =
             13 ->
                 let
                     maybeItem =
-                        (List.head << (List.drop state.boxPosition)) items.boxItems
+                        if state.boxPosition < 0 then
+                            Nothing
+                        else
+                            (List.head << (List.drop state.boxPosition)) items.boxItems
                 in
                     case maybeItem of
                         Nothing ->
@@ -179,7 +183,7 @@ itemView config isFallback item =
                 , ( c.fallbackItem, isFallback )
                 ]
             ]
-            [ text (config.toDisplay item) ]
+            [ text (config.selectedDisplay item) ]
 
 
 fallbackItemsView : Config msg idType itemType -> Items itemType -> List itemType -> State -> Html msg
@@ -245,7 +249,7 @@ editingBoxView config items state =
                     ]
                 , onMouseDown config state (config.toId item)
                 ]
-                [ text (config.toDisplay item)
+                [ text (config.optionDisplay item)
                 ]
     in
         div [ class c.boxItems ] (List.indexedMap boxItemHtml items.boxItems)

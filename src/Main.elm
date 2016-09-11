@@ -47,6 +47,12 @@ selectedItems =
     List.filter (\item -> List.member item.code selectedCodes) availableItems
 
 
+pickItem : String -> Maybe Item
+pickItem s =
+    List.filter (\item -> item.code == s) availableItems
+        |> List.head
+
+
 mapCurrency : { a | code : String, display : String } -> Item
 mapCurrency rawCurrency =
     { code = rawCurrency.code
@@ -92,7 +98,16 @@ update msg model =
             { model | selectizeState = state } ! []
 
         Add code state ->
-            { model | selectizeState = state } ! []
+            case pickItem code of
+                Nothing ->
+                    { model | selectizeState = state } ! []
+
+                Just item ->
+                    { model
+                        | selectizeState = state
+                        , selectedItems = model.selectedItems ++ [ item ]
+                    }
+                        ! []
 
         Remove state ->
             let
@@ -124,7 +139,8 @@ config =
     , onFocus = Focus
     , onBlur = Blur
     , toId = .code
-    , toDisplay = .display
+    , selectedDisplay = .display
+    , optionDisplay = .display
     , match = match
     , htmlOptions =
         { instructionsForBlank = "Start typing for options"

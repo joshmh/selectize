@@ -8,7 +8,7 @@ module Selectize
 
 import Html exposing (..)
 import Html.Attributes exposing (value, defaultValue, maxlength, class, classList, id)
-import Html.Events exposing (on)
+import Html.Events as E exposing (on)
 import Fuzzy
 import String
 import Json.Decode
@@ -338,19 +338,25 @@ view config selectedItems availableItems fallbackItems state =
             boxItems =
                 config.match state.string
 
+            onInputAtt =
+                onInput config state
+
+            onBlurAtt =
+                onBlur config state
+
             editInput =
                 case state.status of
                     Initial ->
                         if (List.length selectedItems) < config.maxItems then
-                            input [ onBlur config, onInput config ] []
+                            input [ onBlurAtt, onInputAtt ] []
                         else
-                            input [ onBlur config, onInput config, maxlength 0 ] []
+                            input [ onBlurAtt, onInputAtt, maxlength 0 ] []
 
                     Idle ->
                         if (List.length selectedItems) < config.maxItems then
-                            input [ onBlur config, onInput config ] []
+                            input [ onBlurAtt, onInputAtt ] []
                         else
-                            input [ onBlur config, onInput config, maxlength 0 ] []
+                            input [ onBlurAtt, onInputAtt, maxlength 0 ] []
 
                     Editing ->
                         let
@@ -360,10 +366,10 @@ view config selectedItems availableItems fallbackItems state =
                                 else
                                     524288
                         in
-                            input [ maxlength maxlength', onBlur Blur, onInput Input, class h.classes.inputEditing ] []
+                            input [ maxlength maxlength', onBlurAtt, onInputAtt, class h.classes.inputEditing ] []
 
                     Cleared ->
-                        input [ onKeyUp config, value "", onBlur Blur, onInput Input ] []
+                        input [ onKeyUp config, value "", onBlurAtt, onInputAtt ] []
 
                     Blurred ->
                         input [ maxlength 0, onFocus Focus, value "" ] []
@@ -384,11 +390,26 @@ view config selectedItems availableItems fallbackItems state =
                 ]
 
 
+onInput : Config msg idType itemType -> State -> Attribute msg
+onInput config state =
+    E.onInput config.toMsg <| (\s -> { state | string = s })
+
+
+onBlur : Config msg idType itemType -> State -> Attribute msg
+onBlur config state =
+    E.onBlur config.onBlur <| (\s -> { state | status = Blurred })
+
+
+onFocus : Config msg idType itemType -> State -> Attribute msg
+onFocus config state =
+    E.onBlur config.onFocus <| (\s -> { state | status = Initial, boxPosition = -1 })
+
+
 onKeyDown : (Int -> msg) -> Attribute msg
 onKeyDown tagger =
-    on "keydown" (Json.Decode.map tagger Html.Events.keyCode)
+    on "keydown" (Json.Decode.map tagger E.keyCode)
 
 
 onKeyUp : (Int -> msg) -> Attribute msg
 onKeyUp tagger =
-    on "keyup" (Json.Decode.map tagger Html.Events.keyCode)
+    on "keyup" (Json.Decode.map tagger E.keyCode)

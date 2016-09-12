@@ -222,10 +222,10 @@ itemsView config items fallbackItems state =
             fallbackItemsView config items [] state
 
         Initial ->
-            fallbackItemsView config items fallbackItems state
+            fallbackItemsView config items [] state
 
         Idle ->
-            fallbackItemsView config items fallbackItems state
+            fallbackItemsView config items [] state
 
         Cleared ->
             fallbackItemsView config items fallbackItems state

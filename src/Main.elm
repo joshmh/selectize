@@ -27,7 +27,7 @@ type CurrencyRec
 
 type alias Model =
     { selectizeState : Selectize.State
-    , selectedItems : List Item
+    , selectedIds : List String
     }
 
 
@@ -37,14 +37,18 @@ type alias Item =
     }
 
 
-selectedCodes : List String
-selectedCodes =
-    [ "USD", "ILS", "CAD" ]
+selectedIds : List String
+selectedIds =
+    [ "USD", "ILS" ]
 
 
-selectedItems : List Item
-selectedItems =
-    List.filter (\item -> List.member item.code selectedCodes) availableItems
+fallbackIds : List String
+fallbackIds =
+    [ "CAD" ]
+
+
+
+-- [ "INR", "BTN", "BOB" ]
 
 
 pickItem : String -> Maybe Item
@@ -68,7 +72,7 @@ availableItems =
 init : ( Model, Cmd Msg )
 init =
     { selectizeState = Selectize.initialSelectize
-    , selectedItems = selectedItems
+    , selectedIds = selectedIds
     }
         ! []
 
@@ -105,16 +109,16 @@ update msg model =
                 Just item ->
                     { model
                         | selectizeState = state
-                        , selectedItems = model.selectedItems ++ [ item ]
+                        , selectedIds = model.selectedIds ++ [ item.code ]
                     }
                         ! []
 
         Remove state ->
             let
-                updatedItems =
-                    List.take ((List.length model.selectedItems) - 1) model.selectedItems
+                updatedIds =
+                    List.take ((List.length model.selectedIds) - 1) model.selectedIds
             in
-                { model | selectedItems = updatedItems, selectizeState = state } ! []
+                { model | selectedIds = updatedIds, selectizeState = state } ! []
 
 
 
@@ -170,24 +174,10 @@ config =
     }
 
 
-fallbackCodes : List String
-fallbackCodes =
-    []
-
-
-fallbackItems : List Item
-fallbackItems =
-    List.filter (\item -> List.member item.code fallbackCodes) availableItems
-
-
-
--- [ "INR", "BTN", "BOB" ]
-
-
 view : Model -> Html Msg
 view model =
     div []
-        [ Selectize.view config model.selectedItems availableItems fallbackItems model.selectizeState
+        [ Selectize.view config model.selectedIds availableItems fallbackIds model.selectizeState
         ]
 
 

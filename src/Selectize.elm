@@ -4,6 +4,8 @@ module Selectize
         , view
         , State
         , Config
+        , HtmlOptions
+        , HtmlClasses
         )
 
 import Html exposing (..)

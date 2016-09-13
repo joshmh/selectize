@@ -137,14 +137,14 @@ updateKeyDown config items state keyCode =
             -- backspace
             8 ->
                 if String.isEmpty state.string && (not << List.isEmpty) items.selectedItems then
-                    Debug.log "DEBUG3" (config.onRemove state)
+                    config.onRemove state
                 else
-                    Debug.log "DEBUG4" (config.toMsg state)
+                    config.toMsg state
 
             _ ->
                 config.toMsg state
     else
-        case (Debug.log "DEBUG20" keyCode) of
+        case keyCode of
             -- up
             38 ->
                 config.toMsg { state | boxPosition = (max -1 (state.boxPosition - 1)) }

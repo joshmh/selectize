@@ -10,9 +10,9 @@ module Selectize
 
 import Html exposing (..)
 import Html.Attributes exposing (value, defaultValue, maxlength, class, classList, id)
-import Html.Events as E exposing (on)
+import Html.Events as E exposing (on, onWithOptions)
 import String
-import Json.Decode
+import Json.Decode as Json
 
 
 -- MODEL
@@ -113,6 +113,23 @@ updateKeyUp config items state keyCode =
         config.toMsg state
 
 
+addSelection : Config msg idType itemType -> Items itemType -> State -> msg
+addSelection config items state =
+    let
+        maybeItem =
+            if state.boxPosition < 0 then
+                Nothing
+            else
+                (List.head << (List.drop state.boxPosition)) items.boxItems
+    in
+        case maybeItem of
+            Nothing ->
+                config.toMsg state
+
+            Just item ->
+                config.onAdd (config.toId item) { state | status = Cleared, string = "", boxPosition = -1 }
+
+
 updateKeyDown : Config msg idType itemType -> Items itemType -> State -> Int -> msg
 updateKeyDown config items state keyCode =
     if List.length items.selectedItems == config.maxItems then
@@ -127,7 +144,7 @@ updateKeyDown config items state keyCode =
             _ ->
                 config.toMsg state
     else
-        case keyCode of
+        case (Debug.log "DEBUG20" keyCode) of
             -- up
             38 ->
                 config.toMsg { state | boxPosition = (max -1 (state.boxPosition - 1)) }
@@ -144,24 +161,19 @@ updateKeyDown config items state keyCode =
 
             -- enter
             13 ->
-                let
-                    maybeItem =
-                        if state.boxPosition < 0 then
-                            Nothing
-                        else
-                            (List.head << (List.drop state.boxPosition)) items.boxItems
-                in
-                    case maybeItem of
-                        Nothing ->
-                            config.toMsg state
-
-                        Just item ->
-                            config.onAdd (config.toId item) { state | status = Cleared, boxPosition = -1 }
+                addSelection config items state
 
             -- backspace
             8 ->
                 if String.isEmpty state.string && (not << List.isEmpty) items.selectedItems then
                     config.onRemove state
+                else
+                    config.toMsg state
+
+            -- tab
+            9 ->
+                if (config.maxItems > 1) then
+                    addSelection config items state
                 else
                     config.toMsg state
 
@@ -387,6 +399,12 @@ view config selectedIds availableItems fallbackIds state =
             onFocusAtt =
                 onFocus config state
 
+            keyDown =
+                if String.isEmpty state.string then
+                    onKeyDownNoDelete config items state
+                else
+                    onKeyDown config items state
+
             editInput =
                 case state.status of
                     Initial ->
@@ -424,7 +442,7 @@ view config selectedIds availableItems fallbackIds state =
                         , ( h.classes.multiItemContainer, config.maxItems > 1 )
                         ]
                     ]
-                    [ span [ class h.classes.selectBox, onKeyDown config items state ]
+                    [ span [ class h.classes.selectBox, keyDown ]
                         [ span [] [ itemsView config items fallbackItems state ]
                         , editInput
                         ]
@@ -462,7 +480,12 @@ onFocus config state =
 
 onKeyDown : Config msg idType itemType -> Items itemType -> State -> Attribute msg
 onKeyDown config items state =
-    rawOnKeyDown (updateKeyDown config items state)
+    rawOnKeyDown deleteSpecialKeys (updateKeyDown config items state)
+
+
+onKeyDownNoDelete : Config msg idType itemType -> Items itemType -> State -> Attribute msg
+onKeyDownNoDelete config items state =
+    rawOnKeyDown noDeleteSpecialKeys (updateKeyDown config items state)
 
 
 onKeyUp : Config msg idType itemType -> Items itemType -> State -> Attribute msg
@@ -470,11 +493,37 @@ onKeyUp config items state =
     rawOnKeyUp (updateKeyUp config items state)
 
 
-rawOnKeyDown : (Int -> msg) -> Attribute msg
-rawOnKeyDown tagger =
-    on "keydown" (Json.Decode.map tagger E.keyCode)
+noDeleteSpecialKeys : List Int
+noDeleteSpecialKeys =
+    [ 8, 38, 40, 9, 13 ]
+
+
+deleteSpecialKeys : List Int
+deleteSpecialKeys =
+    [ 38, 40, 9, 13 ]
+
+
+preventSpecialDecoder : List Int -> Json.Decoder Int
+preventSpecialDecoder specialKeys =
+    E.keyCode
+        `Json.andThen`
+            (\code ->
+                if List.member code specialKeys then
+                    Json.succeed code
+                else
+                    Json.fail "don't prevent"
+            )
+
+
+rawOnKeyDown : List Int -> (Int -> msg) -> Attribute msg
+rawOnKeyDown specialKeys tagger =
+    let
+        options =
+            { stopPropagation = False, preventDefault = True }
+    in
+        onWithOptions "keydown" options (Json.map tagger (preventSpecialDecoder specialKeys))
 
 
 rawOnKeyUp : (Int -> msg) -> Attribute msg
 rawOnKeyUp tagger =
-    on "keyup" (Json.Decode.map tagger E.keyCode)
+    on "keyup" (Json.map tagger E.keyCode)

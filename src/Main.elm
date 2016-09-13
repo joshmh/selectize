@@ -135,7 +135,7 @@ match string items =
 
 config : Selectize.Config Msg String Item
 config =
-    { maxItems = 3
+    { maxItems = 1
     , boxLength = 5
     , toMsg = SelectizeMsg
     , onAdd = Add

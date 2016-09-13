@@ -107,7 +107,7 @@ clean s =
 
 updateKeyUp : Config msg idType itemType -> Items itemType -> State -> Int -> msg
 updateKeyUp config items state keyCode =
-    if keyCode == 13 then
+    if keyCode == 13 || keyCode == 9 then
         config.toMsg { state | status = Initial }
     else
         config.toMsg state
